@@ -343,6 +343,19 @@ class Zlib(TestProject):
                        check=check)
         logging.info('Finished invoking "make" on %s', self.name)
 
+    def verify(self, config, proj_dir):
+        expected_sarif_files = [
+            # Via OBJZ:
+            'adler32.c.sarif', 'crc32.c.sarif', 'deflate.c.sarif',
+            'infback.c.sarif', 'inffast.c.sarif', 'inflate.c.sarif',
+            'inftrees.c.sarif', 'trees.c.sarif', 'zutil.c.sarif',
+
+            # Via OBJG:
+            'compress.c.sarif', 'uncompr.c.sarif', 'gzclose.c.sarif',
+            'gzlib.c.sarif', 'gzread.c.sarif', 'gzwrite.c.sarif'
+        ]
+        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+
 ############################################################################
 # Logic for running tests
 ############################################################################
