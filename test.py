@@ -19,9 +19,10 @@ import sarif.loader
 ############################################################################
 
 class SourceArchive:
-    def __init__(self, url, sha256):
+    def __init__(self, url, hexdigest, alg='sha256'):
         self.url = url
-        self.sha256 = sha256
+        self.hexdigest = hexdigest
+        self.alg = alg
 
     @property
     def filename(self):
@@ -45,8 +46,10 @@ class SourceArchive:
                          self.url, cached_file_path)
         with cached_file_path.open(mode='rb') as f:
             content = f.read()
-        actual_digest = hashlib.sha256(content).hexdigest()
-        expected_digest = self.sha256
+        h = hashlib.new(self.alg)
+        h.update(content)
+        actual_digest = h.hexdigest()
+        expected_digest = self.hexdigest
         if actual_digest != expected_digest:
             raise ValueError('digest %r != expected %r'
                              % (actual_digest, expected_digest))
