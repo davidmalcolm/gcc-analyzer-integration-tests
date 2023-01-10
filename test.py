@@ -147,7 +147,6 @@ class TestProject:
     def verify_sarif_files_exist(self, proj_dir, expected_sarif_files):
         missing = []
         for expected_file in expected_sarif_files:
-            print(Path(proj_dir, self.name, expected_file))
             if Path(proj_dir, self.name, expected_file).exists():
                 logging.info('OK: expected SARIF file %s exists' % expected_file)
             else:
