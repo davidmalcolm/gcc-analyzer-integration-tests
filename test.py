@@ -261,6 +261,9 @@ class ImageMagick(TestProject):
         self.src = Tarball('https://imagemagick.org/archive/ImageMagick-7.1.0-57.tar.xz',
                            '9c3bc3de37376b90a643b9437435cb477db68596b26a778a584020915196870b')
 
+    def verify(self, config, proj_dir):
+        self.verify_sarif_file_exists(proj_dir, 'magick.c.sarif')
+
 class Juliet(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'Juliet')
