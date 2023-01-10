@@ -209,6 +209,10 @@ class Coreutils(TestProject):
         self.src = Tarball('https://ftp.gnu.org/gnu/coreutils/coreutils-9.1.tar.xz',
                            '61a1f410d78ba7e7f37a5a4f50e6d1320aca33375484a3255eddf17a38580423')
 
+    def verify(self, config, proj_dir):
+        expected_sarif_files = ['asnprintf.c.sarif', 'yes.c.sarif']
+        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+
 class GnuTLS(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'gnutls-3.7.8')
