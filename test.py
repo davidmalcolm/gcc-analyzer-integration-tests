@@ -245,6 +245,10 @@ class HAProxy(TestProject):
                   # TODO: get it to succeed:
                   check=False)
 
+    def verify(self, config, proj_dir):
+        expected_sarif_files = ['acl.c.sarif', 'xprt_handshake.c.sarif']
+        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+
 class Httpd(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'httpd-2.4.54')
