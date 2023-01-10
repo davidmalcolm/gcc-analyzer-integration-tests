@@ -195,9 +195,6 @@ class GCC(Compiler):
 #   - using the custom toolchain
 #     - maybe set the PATH?
 #   - injection of:  -fanalyzer -fdiagnostics-format=sarif-file
-#
-#  More projects to add:
-#   kernel
 
 class Apr(TestProject):
     def __init__(self):
@@ -290,6 +287,33 @@ class Juliet(TestProject):
                        cwd=Path(proj_dir, 'C'),
                        check=True)
         logging.info('Finished invoking "make" on %s', self.name)
+
+class Kernel(TestProject):
+    def __init__(self):
+        TestProject.__init__(self, 'linux-5.10.162')
+        self.src = Tarball('https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.162.tar.xz',
+                           '941c7ddd7c27f49b4491e1c8fbf1efedcbac50b48ed8836ec91091ead69723f820a61bfda795378dcc728a782d2206189903333e83e255b723eec01157bbb0bb',
+                           alg='sha512')
+
+    def build(self, config, proj_dir):
+        self.make(config,
+                  proj_dir,
+                  extra_args=['allnoconfig', 'all',
+                              'CC=%s' % config.toolchain.install_bin_path,
+                              'DEBUG_CFLAGS=-fanalyzer'])
+        # TODO: add -fdiagnostics-format=sarif-file to DEBUG_CFLAGS
+        #
+        # Currently this triggers an ICE due to
+        #  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108307
+        #
+        # Without this, we're merely verifying that the kernel builds with
+        # -fanalyzer with the compiler under test - we're not verifying
+        # anything about the analyzer output.
+        #
+        # TODO: we might also want a way to add 'V=1' to the "make" invocation
+
+    def verify(self, config, proj_dir):
+        self.verify_file_exists(proj_dir, 'vmlinux')
 
 class OpenSSL(TestProject):
     def __init__(self):
@@ -478,6 +502,7 @@ def main():
         HAProxy(),
         ImageMagick(),
         Juliet(),
+        Kernel(),
         Pcre(),
         Qemu(),
         Xz(),
