@@ -144,6 +144,13 @@ class TestProject:
     def verify(self, config, proj_dir):
         pass
 
+    def verify_file_exists(self, proj_dir, expected_file):
+        if Path(proj_dir, self.name, expected_file).exists():
+            logging.info('OK: expected file %s exists' % expected_file)
+        else:
+            logging.error('ERR: expected file %s does not exist' % expected_file)
+            raise ValueError('missing file: %s' % expected_file)
+
     def verify_sarif_files_exist(self, proj_dir, expected_sarif_files):
         missing = []
         for expected_file in expected_sarif_files:
