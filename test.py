@@ -317,6 +317,9 @@ class Xz(TestProject):
         self.src = Tarball('https://www.tukaani.org/xz/xz-5.4.0.tar.xz',
                            '5f260e3b43f75cf43ca43d107dd18209f7d516782956a74ddd53288e02a83a31')
 
+    def verify(self, config, proj_dir):
+        self.verify_sarif_file_exists(proj_dir, 'src/xzdec/xzdec-xzdec.c.sarif')
+
 class Zlib(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'zlib-1.2.13')
