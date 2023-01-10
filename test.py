@@ -165,7 +165,6 @@ class TestProject:
         """
         self.configure(config.toolchain, proj_dir)
         self.make(config, proj_dir)
-        self.verify(config, proj_dir)
 
 ############################################################################
 
@@ -400,6 +399,8 @@ def build_project(config, proj):
 
     # configure&build
     proj.build(config, proj_dir)
+
+    proj.verify(config, proj_dir)
 
     # scrape out the results
     results = []
