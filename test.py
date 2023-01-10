@@ -300,6 +300,33 @@ class Xz(TestProject):
         self.src = Tarball('https://www.tukaani.org/xz/xz-5.4.0.tar.xz',
                            '5f260e3b43f75cf43ca43d107dd18209f7d516782956a74ddd53288e02a83a31')
 
+class Zlib(TestProject):
+    def __init__(self):
+        TestProject.__init__(self, 'zlib-1.2.13')
+        self.src = Tarball('https://www.zlib.net/zlib-1.2.13.tar.xz',
+                           'd14c38e313afc35a9a8760dadf26042f51ea0f5d154b0630a31da0540107fb98')
+
+    def configure(self, toolchain, proj_dir):
+        logging.info('Configuring %s', self.name)
+        subprocess.run(['./configure'],
+                       cwd=Path(proj_dir, self.name),
+                       check=True)
+        logging.info('Finished configuring %s', self.name)
+
+    def make(self, config, proj_dir, extra_args=None, check=True):
+        logging.info('Invoking "make" on %s', self.name)
+        args = ['make', config.get_make_jobs_arg()]
+        if extra_args:
+            args += extra_args
+        args += ['CC=%s' % config.toolchain.install_bin_path,
+                 'CFLAGS=-O -fanalyzer -fdiagnostics-format=sarif-file']
+        # ...but don't touch SFLAGS, to ensure that the link of the shared
+        # library succeeds.
+        subprocess.run(args,
+                       cwd=Path(proj_dir, self.name),
+                       check=check)
+        logging.info('Finished invoking "make" on %s', self.name)
+
 ############################################################################
 # Logic for running tests
 ############################################################################
@@ -395,6 +422,7 @@ def main():
         Pcre(),
         Qemu(),
         Xz(),
+        Zlib(),
     ]
 
     # TODO:
