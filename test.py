@@ -155,6 +155,9 @@ class TestProject:
         if missing:
             raise ValueError('missing SARIF files: %s' % missing)
 
+    def verify_sarif_file_exists(self, proj_dir, expected_sarif_file):
+        self.verify_sarif_files_exist(proj_dir, [expected_sarif_file])
+
     def build(self, config, proj_dir):
         """
         Default implementation of TestProject.build:
