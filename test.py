@@ -191,7 +191,6 @@ class GCC(Compiler):
 #   - injection of:  -fanalyzer -fdiagnostics-format=sarif-file
 #
 #  More projects to add:
-#   juliet
 #   kernel
 
 class Apr(TestProject):
