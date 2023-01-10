@@ -274,6 +274,13 @@ class Pcre(TestProject):
         self.src = Tarball('https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.bz2',
                            '8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840')
 
+class Pixman(TestProject):
+    def __init__(self):
+        TestProject.__init__(self, 'pixman-0.42.2')
+        self.src = Tarball('https://www.cairographics.org/releases/pixman-0.42.2.tar.gz',
+                           '0a4e327aef89c25f8cb474fbd01de834fd2a1b13fdf7db11ab72072082e45881cd16060673b59d02054b1711ae69c6e2395f6ae9214225ee7153939efcd2fa5d',
+                           alg='sha512')
+
 class Qemu(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'qemu-7.2.0')
@@ -404,6 +411,10 @@ def main():
         #   providers/implementations/digests/blake2s_prov.c
         # TODO: file bugs about this against analyzer
         OpenSSL(),
+
+        # Seems to get stuck on pixman-sse2.c
+        # TODO: file bug about this against analyzer
+        Pixman(),
     ]
 
     if 1:
