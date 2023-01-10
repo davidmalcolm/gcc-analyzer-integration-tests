@@ -141,6 +141,21 @@ class TestProject:
                        check=check)
         logging.info('Finished invoking "make" on %s', self.name)
 
+    def verify(self, config, proj_dir):
+        pass
+
+    def verify_sarif_files_exist(self, proj_dir, expected_sarif_files):
+        missing = []
+        for expected_file in expected_sarif_files:
+            print(Path(proj_dir, self.name, expected_file))
+            if Path(proj_dir, self.name, expected_file).exists():
+                logging.info('OK: expected SARIF file %s exists' % expected_file)
+            else:
+                logging.error('ERR: expected SARIF file %s does not exist' % expected_file)
+                missing.append(expected_file)
+        if missing:
+            raise ValueError('missing SARIF files: %s' % missing)
+
     def build(self, config, proj_dir):
         """
         Default implementation of TestProject.build:
@@ -148,6 +163,7 @@ class TestProject:
         """
         self.configure(config.toolchain, proj_dir)
         self.make(config, proj_dir)
+        self.verify(config, proj_dir)
 
 ############################################################################
 
