@@ -198,6 +198,10 @@ class Apr(TestProject):
         self.src = Tarball('https://dlcdn.apache.org//apr/apr-1.7.0.tar.gz',
                            '48e9dbf45ae3fdc7b491259ffb6ccf7d63049ffacbc1c0977cced095e4c2d5a2')
 
+    def verify(self, config, proj_dir):
+        expected_sarif_files = ['apr_hash.c.sarif']
+        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+
 class Coreutils(TestProject):
     # configure takes almost 2 minutes on my box
     def __init__(self):
