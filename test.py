@@ -291,6 +291,9 @@ class Pcre(TestProject):
         self.src = Tarball('https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.bz2',
                            '8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840')
 
+    def verify(self, config, proj_dir):
+        self.verify_sarif_file_exists(proj_dir, 'pcre2grep-pcre2grep.c.sarif')
+
 class Pixman(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'pixman-0.42.2')
