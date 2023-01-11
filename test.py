@@ -116,7 +116,7 @@ class TestProject:
     def configure(self, toolchain, proj_dir):
         logging.info('Configuring %s', self.name)
         subprocess.run(['./configure',
-                        'CC=%s' % toolchain.install_bin_path,
+                        'CC=%s' % toolchain.c_compiler_path,
                         'CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file'],
                        cwd=Path(proj_dir, self.name),
                        check=True)
@@ -125,7 +125,7 @@ class TestProject:
     def configure_meson(self, toolchain, proj_dir):
         logging.info('Configuring %s', self.name)
         subprocess.run(['./configure',
-                        '--cc=%s' % toolchain.install_bin_path,
+                        '--cc=%s' % toolchain.c_compiler_path,
                         '--extra-cflags=-fanalyzer -fdiagnostics-format=sarif-file'],
                        cwd=Path(proj_dir, self.name),
                        check=True)
@@ -144,26 +144,30 @@ class TestProject:
     def verify(self, config, proj_dir):
         pass
 
-    def verify_file_exists(self, proj_dir, expected_file):
-        if Path(proj_dir, self.name, expected_file).exists():
+    def verify_file_exists(self, within_dir, expected_file):
+        path = Path(within_dir, expected_file)
+        if path.exists():
             logging.info('OK: expected file %s exists' % expected_file)
         else:
-            logging.error('ERR: expected file %s does not exist' % expected_file)
+            logging.error('ERR: expected file %s does not exist (%r)'
+                          % (expected_file, path))
             raise ValueError('missing file: %s' % expected_file)
 
-    def verify_sarif_files_exist(self, proj_dir, expected_sarif_files):
+    def verify_sarif_files_exist(self, within_dir, expected_sarif_files):
         missing = []
         for expected_file in expected_sarif_files:
-            if Path(proj_dir, self.name, expected_file).exists():
+            path = Path(within_dir, expected_file)
+            if path.exists():
                 logging.info('OK: expected SARIF file %s exists' % expected_file)
             else:
-                logging.error('ERR: expected SARIF file %s does not exist' % expected_file)
+                logging.error('ERR: expected SARIF file %s does not exist (%r)'
+                              % (expected_file, path))
                 missing.append(expected_file)
         if missing:
             raise ValueError('missing SARIF files: %s' % missing)
 
-    def verify_sarif_file_exists(self, proj_dir, expected_sarif_file):
-        self.verify_sarif_files_exist(proj_dir, [expected_sarif_file])
+    def verify_sarif_file_exists(self, within_dir, expected_sarif_file):
+        self.verify_sarif_files_exist(within_dir, [expected_sarif_file])
 
     def build(self, config, proj_dir):
         """
@@ -181,10 +185,13 @@ class Compiler:
 class GCC(Compiler):
     def __init__(self, install_bin_path):
         self.install_bin_path = install_bin_path
+        self.c_compiler_path = Path(install_bin_path, 'gcc')
+        self.cplusplus_compiler_path = Path(install_bin_path, 'g++')
 
     def verify(self):
         logging.info('Getting toolchain version')
-        subprocess.run([self.install_bin_path, '--version'], check=True)
+        subprocess.run([self.c_compiler_path, '--version'], check=True)
+        subprocess.run([self.cplusplus_compiler_path, '--version'], check=True)
 
 ############################################################################
 # Various specific projects
@@ -204,7 +211,8 @@ class Apr(TestProject):
 
     def verify(self, config, proj_dir):
         expected_sarif_files = ['apr_hash.c.sarif']
-        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
 
 class Coreutils(TestProject):
     # configure takes almost 2 minutes on my box
@@ -215,7 +223,8 @@ class Coreutils(TestProject):
 
     def verify(self, config, proj_dir):
         expected_sarif_files = ['asnprintf.c.sarif', 'yes.c.sarif']
-        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
 
 class GnuTLS(TestProject):
     def __init__(self):
@@ -244,14 +253,15 @@ class HAProxy(TestProject):
                   proj_dir,
                   extra_args=['TARGET=linux-glibc',
                               'USE_OPENSSL=1',
-                              'CC=%s' % config.toolchain.install_bin_path,
+                              'CC=%s' % config.toolchain.c_compiler_path,
                               'DEBUG_CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file'],
                   # TODO: get it to succeed:
                   check=False)
 
     def verify(self, config, proj_dir):
         expected_sarif_files = ['acl.c.sarif', 'xprt_handshake.c.sarif']
-        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
 
 class Httpd(TestProject):
     def __init__(self):
@@ -266,7 +276,8 @@ class ImageMagick(TestProject):
                            '9c3bc3de37376b90a643b9437435cb477db68596b26a778a584020915196870b')
 
     def verify(self, config, proj_dir):
-        self.verify_sarif_file_exists(proj_dir, 'magick.c.sarif')
+        self.verify_sarif_file_exists(Path(proj_dir, self.name),
+                                      'magick.c.sarif')
 
 class Juliet(TestProject):
     def __init__(self):
@@ -276,17 +287,41 @@ class Juliet(TestProject):
 
     def build(self, config, proj_dir):
         logging.info('Invoking "make" on %s', self.name)
+
+        # From the upstream Makefiles (in the per-testcase subdirectories):
+        CFLAGS='-c'
+
+        # Inject analyzer and SARIF output:
+        CFLAGS += ' -fanalyzer -fdiagnostics-format=sarif-file'
+
+        # Within C/testcases/CWE440_Expected_Behavior_Violation/ we
+        # get this failure when g++ defaults to C++17 (as of GCC 11):
+        #   CWE440_Expected_Behavior_Violation__exception_01.cpp: At global scope:
+        #   CWE440_Expected_Behavior_Violation__exception_01.cpp:30:21: error: ISO C++17 does not allow dynamic exception specifications
+        #      30 | static void good1() throw (range_error) /* FIX: Declare that function throws an  exception */
+        #         |                     ^~~~~
+        # Work around this by injecting "-std=c++14"
+        # Unfortunately the upstream Makefiles don't seem to have a
+        # distinction between C and C++ flags, leading to lots of
+        # (hopefully) benign:
+        #   cc1: warning: command-line option ‘-std=c++14’ is valid for C++/ObjC++ but not for C
+        CFLAGS += ' -std=c++14'
+
         args = ['make',
                 config.get_make_jobs_arg(),
-                # -c is needed to avoid link errors
-                'CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file -c',
-                'CC=%s' % config.toolchain.install_bin_path,
-                'CPP=%s' % config.toolchain.install_bin_path, # FIXME: probably ought to be g++
+                'CFLAGS=%s' % CFLAGS,
+                'CC=%s' % config.toolchain.c_compiler_path,
+                'CPP=%s' % config.toolchain.cplusplus_compiler_path,
+                'V=1'
                 ]
         subprocess.run(args,
                        cwd=Path(proj_dir, 'C'),
                        check=True)
         logging.info('Finished invoking "make" on %s', self.name)
+
+    def verify(self, config, proj_dir):
+        self.verify_sarif_file_exists(proj_dir,
+                                      'C/testcases/CWE415_Double_Free/s01/CWE415_Double_Free__malloc_free_char_01.c.sarif')
 
 class Kernel(TestProject):
     def __init__(self):
@@ -299,7 +334,7 @@ class Kernel(TestProject):
         self.make(config,
                   proj_dir,
                   extra_args=['allnoconfig', 'all',
-                              'CC=%s' % config.toolchain.install_bin_path,
+                              'CC=%s' % config.toolchain.c_compiler_path,
                               'DEBUG_CFLAGS=-fanalyzer'])
         # TODO: add -fdiagnostics-format=sarif-file to DEBUG_CFLAGS
         #
@@ -324,7 +359,7 @@ class OpenSSL(TestProject):
     def configure(self, toolchain, proj_dir):
         logging.info('Configuring %s', self.name)
         subprocess.run(['./Configure',
-                        'CC=%s' % toolchain.install_bin_path,
+                        'CC=%s' % toolchain.c_compiler_path,
                         'CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file'],
                        cwd=Path(proj_dir, self.name),
                        check=True)
@@ -337,7 +372,8 @@ class Pcre(TestProject):
                            '8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840')
 
     def verify(self, config, proj_dir):
-        self.verify_sarif_file_exists(proj_dir, 'pcre2grep-pcre2grep.c.sarif')
+        self.verify_sarif_file_exists(Path(proj_dir, self.name),
+                                      'pcre2grep-pcre2grep.c.sarif')
 
 class Pixman(TestProject):
     def __init__(self):
@@ -366,7 +402,8 @@ class Xz(TestProject):
                            '5f260e3b43f75cf43ca43d107dd18209f7d516782956a74ddd53288e02a83a31')
 
     def verify(self, config, proj_dir):
-        self.verify_sarif_file_exists(proj_dir, 'src/xzdec/xzdec-xzdec.c.sarif')
+        self.verify_sarif_file_exists(Path(proj_dir, self.name),
+                                      'src/xzdec/xzdec-xzdec.c.sarif')
 
 class Zlib(TestProject):
     def __init__(self):
@@ -386,7 +423,7 @@ class Zlib(TestProject):
         args = ['make', config.get_make_jobs_arg()]
         if extra_args:
             args += extra_args
-        args += ['CC=%s' % config.toolchain.install_bin_path,
+        args += ['CC=%s' % config.toolchain.c_compiler_path,
                  'CFLAGS=-O -fanalyzer -fdiagnostics-format=sarif-file']
         # ...but don't touch SFLAGS, to ensure that the link of the shared
         # library succeeds.
@@ -406,7 +443,8 @@ class Zlib(TestProject):
             'compress.c.sarif', 'uncompr.c.sarif', 'gzclose.c.sarif',
             'gzlib.c.sarif', 'gzread.c.sarif', 'gzwrite.c.sarif'
         ]
-        self.verify_sarif_files_exist(proj_dir, expected_sarif_files)
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
 
 ############################################################################
 # Logic for running tests
@@ -476,17 +514,17 @@ def main():
         prog = 'ProgramName',
         description = 'What the program does',
         epilog = 'Text at the bottom of help')
-    parser.add_argument('--gcc-path', type=Path, required=True)
+    parser.add_argument('--gcc-bin-path', type=Path, required=True)
     parser.add_argument('--downloads-dir', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--sarif-schema-path', type=Path, required=True)
     args = parser.parse_args()
-    logging.info('gcc_path: %s' % args.gcc_path)
+    logging.info('gcc_bin_path: %s' % args.gcc_bin_path)
     logging.info('downloads_dir: %s' % args.downloads_dir)
     logging.info('run_dir: %s' % args.run_dir)
     logging.info('sarif_schema_path: %s' % args.sarif_schema_path)
 
-    toolchain = GCC(args.gcc_path)
+    toolchain = GCC(args.gcc_bin_path)
     toolchain.verify()
 
     config = Config(toolchain,
