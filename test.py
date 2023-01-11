@@ -556,7 +556,7 @@ def main():
         Httpd(),
 
         # Seems to get stuck on:
-        #   crypto/ec/curve25519.c (twice)
+        #   crypto/ec/curve25519.c (twice); this is https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107943
         #   providers/implementations/digests/blake2b_prov.c
         #   providers/implementations/digests/blake2s_prov.c
         # TODO: file bugs about this against analyzer
