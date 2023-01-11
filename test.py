@@ -243,6 +243,65 @@ class Coreutils(TestProject):
         self.verify_sarif_files_exist(Path(proj_dir, self.name),
                                       expected_sarif_files)
 
+class Doom(TestProject):
+    def __init__(self):
+        TestProject.__init__(self, 'doom')
+        self.src = Zipfile('https://www.gamers.org/pub/idgames/source/doomsrc.zip',
+                           '95ccda470805701b11bbc2657337faa3ff4a28c3a636f37c5a1440055f3e2d9b')
+
+    def prep(self, config, proj_dir):
+        TestProject.prep(self, config, proj_dir)
+        subprocess.run(['tar', '--extract',
+                        '--file', Path('linuxdoom-1.10.src.tgz')],
+                       cwd=proj_dir,
+                       check=True)
+        remove_line(Path(proj_dir, 'linuxdoom-1.10/i_video.c'),
+                    '#include <errnos.h>')
+
+    def configure(self, toolchain, proj_dir):
+        pass
+
+    def make(self, config, proj_dir, extra_args=None, check=True):
+        logging.info('Invoking "make" on %s', self.name)
+        CFLAGS='-g -Wall -DNORMALUNIX -DLINUX' # from Makefile
+        # Seems to be needed by m_misc.c:
+        CFLAGS += ' -Wno-pointer-to-int-cast'
+
+        # Inject analyzer and SARIF output:
+        CFLAGS += ' -fanalyzer -fdiagnostics-format=sarif-file'
+
+        args = ['make', config.get_make_jobs_arg(),
+                'CC=%s' % config.toolchain.c_compiler_path,
+                'CFLAGS=%s' % CFLAGS]
+        if extra_args:
+            args += extra_args
+        subprocess.run(args,
+                       cwd=Path(proj_dir, 'linuxdoom-1.10'),
+                       check=False)
+        # TODO: fix the build; currently failing in m_misc.c with various
+        # errors of the form:
+        #        m_misc.c:296:45: error: initializer element is not constant
+
+        logging.info('Finished invoking "make" on %s', self.name)
+
+    def verify(self, config, proj_dir):
+        OBJS=('''
+        doomdef.o doomstat.o dstrings.o i_system.o i_sound.o i_video.o
+        i_net.o tables.o f_finale.o f_wipe.o d_main.o d_net.o d_items.o
+        g_game.o
+        m_menu.o m_misc.o m_argv.o m_bbox.o m_fixed.o m_swap.o m_cheat.o m_random.o
+        am_map.o
+        p_ceilng.o p_doors.o p_enemy.o p_floor.o p_inter.o p_lights.o p_map.o
+        p_maputl.o p_plats.o p_pspr.o p_setup.o p_sight.o p_spec.o p_switch.o
+        p_mobj.o p_telept.o p_tick.o p_saveg.o p_user.o
+        r_bsp.o r_data.o r_draw.o r_main.o r_plane.o r_segs.o r_sky.o r_things.o
+        w_wad.o wi_stuff.o v_video.o st_lib.o st_stuff.o hu_stuff.o hu_lib.o s_sound.o z_zone.o info.o sounds.o
+        ''')
+        expected_sarif_files = [obj.replace('.o', '.c.sarif')
+                                for obj in OBJS.split()]
+        self.verify_sarif_files_exist(Path(proj_dir, 'linuxdoom-1.10'),
+                                      expected_sarif_files)
+
 class GnuTLS(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'gnutls-3.7.8')
@@ -554,6 +613,7 @@ def main():
     projects = [
         Apr(),
         Coreutils(),
+        Doom(),
         HAProxy(),
         ImageMagick(),
         Juliet(),
