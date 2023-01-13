@@ -302,6 +302,17 @@ class Doom(TestProject):
         self.verify_sarif_files_exist(Path(proj_dir, 'linuxdoom-1.10'),
                                       expected_sarif_files)
 
+class Git(TestProject):
+    def __init__(self):
+        TestProject.__init__(self, 'git-2.39.0')
+        self.src = Tarball('https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.39.0.tar.xz',
+                           'ba199b13fb5a99ca3dec917b0bd736bc0eb5a9df87737d435eddfdf10d69265b')
+
+    def verify(self, config, proj_dir):
+        expected_sarif_files = ['usage.c.sarif']
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
+
 class GnuTLS(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'gnutls-3.7.8')
@@ -614,6 +625,7 @@ def main():
         Apr(),
         Coreutils(),
         Doom(),
+        Git(),
         HAProxy(),
         ImageMagick(),
         Juliet(),
