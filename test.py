@@ -153,6 +153,8 @@ class TestProject:
         args = ['make', config.get_make_jobs_arg()]
         if extra_args:
             args += extra_args
+        if not check:
+            args.append('-k')
         subprocess.run(args,
                        cwd=Path(proj_dir, self.name),
                        check=check)
