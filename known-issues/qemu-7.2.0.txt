@@ -1,0 +1,26 @@
+qemu-7.2.0
+==========
+
+  SKIP: [-Wimplicit-function-declaration]
+  SKIP: [-Wnested-externs]
+
+  TRUE: ../disas/sparc.c:2691:9: warning: dereference of possibly-NULL ‘sorted_opcodes’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+  TRUE: ../subprojects/libvhost-user/libvhost-user.c:2550:5: warning: dereference of possibly-NULL ‘elem’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+
+  To be classified
+  ================
+    TODO: ../hw/tpm/tpm_tis_common.c:311:21: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    TODO: ../hw/tpm/tpm_tis_common.c:436:9: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    TODO: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    TODO: ../qobject/json-parser.c:382:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    TODO: ../qobject/json-parser.c:545:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    TODO: ../qobject/json-parser.c:547:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    TODO: ../target/ppc/misc_helper.c:78:38: warning: shift by count (‘1024’) >= precision of type (‘64’) [-Wanalyzer-shift-count-overflow]
+    TODO: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on possibly invalid file descriptor ‘sock’ [-Wanalyzer-fd-use-without-check]
+    TODO: [-Wanalyzer-deref-before-check]
+    TODO: [-Wanalyzer-fd-type-mismatch]
+    TODO: [-Wanalyzer-malloc-leak]
+    TODO: [-Wanalyzer-null-argument]
+    TODO: [-Wanalyzer-null-dereference]
+    TODO: [-Wanalyzer-out-of-bounds]
+    TODO: [-Wanalyzer-use-of-uninitialized-value]

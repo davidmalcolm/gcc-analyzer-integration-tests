@@ -1,0 +1,15 @@
+apr-1.7.0
+=========
+
+  False positives not yet in GCC bugzilla:
+    FALSE: network_io/unix/sockaddr.c:484:8: warning: check of ‘prev_sa’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: network_io/unix/sockaddr.c:704:12: warning: check of ‘d’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+      Both of these look like false positives
+    FALSE: strings/apr_snprintf.c:535:9: warning: use of uninitialized value ‘p’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      Looks like a false positive
+
+  To be classified
+  ================
+    TODO: [-Wanalyzer-fd-leak]
+    TODO: [-Wanalyzer-null-dereference]
+    TODO: [-Wanalyzer-possible-null-dereference]

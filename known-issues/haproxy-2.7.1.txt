@@ -1,0 +1,26 @@
+haproxy-2.7.1
+=============
+
+  TRUE: src/cfgparse-ssl.c:1033:17: warning: dereference of possibly-NULL ‘p1’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+  TRUE: src/flt_http_comp.c:693:17: warning: dereference of possibly-NULL ‘comp’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+
+  False positives not yet in GCC bugzilla:
+    FALSE: src/mqtt.c:1251:18: warning: use of uninitialized value ‘parser’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+
+  To be classified
+  ================
+    TODO: [-Wanalyzer-deref-before-check]
+    TODO: [-Wanalyzer-double-free]
+    TODO: [-Wanalyzer-fd-leak]
+    TODO: [-Wanalyzer-malloc-leak]
+    TODO: [-Wanalyzer-null-argument]
+    TODO: [-Wanalyzer-null-dereference]
+    TODO: [-Wanalyzer-out-of-bounds]
+    TODO: [-Wanalyzer-possible-null-argument]
+    TODO: [-Wanalyzer-possible-null-dereference]
+    TODO: [-Wanalyzer-use-after-free]
+    TODO: [-Wanalyzer-use-of-uninitialized-value]
+    TODO: src/ev_select.c:264:13: warning: allocated buffer size is not a multiple of the pointee's size [CWE-131] [-Wanalyzer-allocation-size]
+    TODO: src/ev_select.c:266:13: warning: allocated buffer size is not a multiple of the pointee's size [CWE-131] [-Wanalyzer-allocation-size]
+      "allocated ‘(int)((long unsigned int)(global.maxsock + 1023) * 128 >> 10)’ bytes here"
+      "assigned to ‘unsigned int *’ here; ‘sizeof (unsigned int)’ is ‘4’"

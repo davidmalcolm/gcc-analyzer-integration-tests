@@ -1,0 +1,133 @@
+linuxdoom-1.10
+==============
+
+  SKIP: 'rcsid' defined but not used [-Wunused-const-variable=]
+
+  Various non-analyzer warnings:
+    SKIP: [-Wdeprecated-declarations]
+    SKIP: [-Wenum-compare]
+    SKIP: [-Wformat-overflow=]
+    SKIP: [-Wimplicit-int]
+    SKIP: [-Wint-to-pointer-cast]
+    SKIP: [-Wmisleading-indentation]
+    SKIP: [-Wparentheses]
+    SKIP: [-Wpointer-sign]
+    SKIP: [-Wsequence-point]
+    SKIP: [-Wunused-but-set-variable]
+
+  Various stray notes:
+    SKIP: note:
+
+  SKIP: error: initializer element is not constant
+
+  False positives already in GCC bugzilla:
+    FALSE: p_maputl.c:151:8: warning: use of uninitialized value ‘p2’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: p_maputl.c:151:8: warning: use of uninitialized value ‘p1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: p_maputl.c:152:16: warning: use of uninitialized value ‘p1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: p_floor.c:503:9: warning: use of uninitialized value ‘speed’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: p_floor.c:504:9: warning: use of uninitialized value ‘stairsize’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: p_floor.c:532:17: warning: use of uninitialized value ‘stairsize’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: p_floor.c:547:17: warning: use of uninitialized value ‘speed’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105273#c5
+
+  False positives not yet in GCC bugzilla:
+    FALSE: r_data.c:563:8: warning: check of ‘maptex2’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: s_sound.c:855:17: warning: dereference of NULL ‘0’ [CWE-476] [-Wanalyzer-null-dereference]
+      S_StopChannel(cnum) is called on a cnum < numChannels, and we bail out early from the "// Find an open channel" loop
+      S_StopChannel sets channels[cnumm].sfxinfo = 0;
+      but it only gets dereferenced in the suite guarded by "// None available"
+      so we'd have (cnum < numChannels) && (cnum == numChannels) which is impossible
+    FALSE: w_wad.c:219:28: warning: stack-based buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+    FALSE: w_wad.c:220:24: warning: stack-based buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+      Complains about it accessing singleinfo on the 2nd iteration, but only 1 iteration can happend for the singleinfo case.
+      It ought to "know" that numlumps is 1 for the case where fileinfo == &singleinfo.
+
+  Known false positives that aren't to be fixed at the GCC side:
+    FALSE: r_segs.c:287:25: warning: use of uninitialized value ‘texturecolumn’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_segs.c:309:33: warning: use of uninitialized value ‘texturecolumn’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_segs.c:338:33: warning: use of uninitialized value ‘texturecolumn’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_segs.c:357:17: warning: use of uninitialized value ‘texturecolumn’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      Would happen on certain combinations of texturing flags, but these are presumably impossible (and the analyzer can't know this)
+
+    FALSE: use of uninitialized value ‘music’
+      within s_sound.c: happens after a call to I_Error, which exits, but isn't marked as noreturn
+
+    FALSE: i_net.c:119:9: warning: ‘bind’ on possibly invalid file descriptor ‘s’ [-Wanalyzer-fd-use-without-check]
+      happens after a call to I_Error (in UDPsocket), which exits, but isn't marked as noreturn
+
+    FALSE: p_maputl.c:727:9: warning: dereference of NULL ‘in’ [CWE-476] [-Wanalyzer-null-dereference]
+      In 'P_TraverseIntercepts', when entering the loop, but there are no "scan" for which (scan->frac < dist)
+      Given the comment here:
+         in = 0;			// shut up compiler warning
+      presumably it's actually impossible, but not expected for the analyzer to be able to figure this out.
+
+    FALSE: p_spec.c:1186:24: warning: dereference of NULL ‘s2’ [CWE-476] [-Wanalyzer-null-dereference]
+      getNextSector has:
+    if (!(line->flags & ML_TWOSIDED))
+	return NULL;
+	and EV_DoDonut does unconditionally dereference this
+       Seems like an invariant that the analyzer can't know.
+
+    TODO: p_spec.c:1196:13: warning: dereference of NULL ‘s2’ [CWE-476] [-Wanalyzer-null-dereference]
+      this is a dup/followup of the one at line 24
+      TODO: file a bug: we shouldn't continue to complain after we already complained
+
+    FALSE: r_things.c:829:9: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:829:28: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:830:9: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:830:28: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:831:9: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:832:9: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:833:9: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: r_things.c:834:9: warning: use of uninitialized value ‘best’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      Based on the comment "//best = 0;		// shut up the compiler warning"
+      it looks like there's an invariant that we *always* find a ds with ds->svale < MAXINT
+
+  TRUE: g_game.c:496:36: warning: argument to ‘sizeof’ in ‘memset’ call is the same expression as the destination; did you mean to dereference it? [-Wsizeof-pointer-memaccess]
+  TRUE: g_game.c:497:34: warning: argument to ‘sizeof’ in ‘memset’ call is the same expression as the destination; did you mean to dereference it? [-Wsizeof-pointer-memaccess]
+
+  Various unchecked uses of malloc:
+    TRUE: d_main.c:553:5: warning: use of possibly-NULL ‘newfile’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:585:5: warning: use of possibly-NULL ‘doom2wad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:589:5: warning: use of possibly-NULL ‘doomuwad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:593:5: warning: use of possibly-NULL ‘doomwad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:597:5: warning: use of possibly-NULL ‘doom1wad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:602:5: warning: use of possibly-NULL ‘plutoniawad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:605:5: warning: use of possibly-NULL ‘tntwad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:610:5: warning: use of possibly-NULL ‘doom2fwad’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:762:13: warning: use of possibly-NULL ‘myargv’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: d_main.c:772:25: warning: dereference of possibly-NULL ‘file’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+    TRUE: d_main.c:774:17: warning: dereference of possibly-NULL ‘file’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+    TRUE: i_net.c:253:5: warning: use of possibly-NULL ‘doomcom’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: i_system.c:153:5: warning: use of possibly-NULL ‘mem’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+
+  TRUE: w_wad.c:300:5: warning: allocated buffer size is not a multiple of the pointee's size [CWE-131] [-Wanalyzer-allocation-size]
+    Code has:
+      // will be realloced as lumps are added
+      lumpinfo = malloc(1);
+    but seems dubious; why not used sizeof(lumpinfo_t)?
+
+  To be classified
+  ================
+
+    TODO: w_wad.c:196:27: warning: use of uninitialized value ‘header.numlumps’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    TODO: w_wad.c:197:31: warning: use of uninitialized value ‘header.infotableofs’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+       There's a:
+          read (handle, &header, sizeof(header));
+       where:
+          wadinfo_t		header;
+       where:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+typedef struct
+{
+    // Should be "IWAD" or "PWAD".
+    char		identification[4];		
+    int			numlumps;
+    int			infotableofs;
+    
+} wadinfo_t;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       so the "read" ought to initialize it, if data was read.
+       But nothing's checking that "read" succeeds; if it fails, "header" could still be uninit.
+       What is -fanalyzer thinking?
+
