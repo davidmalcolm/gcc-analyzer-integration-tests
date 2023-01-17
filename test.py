@@ -484,6 +484,11 @@ class Qemu(TestProject):
                   # TODO: get it to succeed:
                   check=False)
 
+    def verify(self, config, proj_dir):
+        expected_sarif_files = ['build/main.c.c.sarif', 'build/cpu.c.c.sarif']
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
+
 class Xz(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'xz-5.4.0')
