@@ -2,11 +2,11 @@ Test harness for GCC's -fanalyzer
 =================================
 
 This is an integration test suite for
-`GCC's -fanalyzer option <https://gcc.gnu.org/wiki/StaticAnalyzer>`.
+`GCC's -fanalyzer option <https://gcc.gnu.org/wiki/StaticAnalyzer>`_.
 
 The idea is to build various C projects using a candidate installation of GCC
 with ``-fanalyzer``, and capture the diagnostics in
-`SARIF <https://sarifweb.azurewebsites.net/>` format.
+`SARIF <https://sarifweb.azurewebsites.net/>`_ format.
 
 This way, the diagnostics emitted by different GCC builds can be compared
 i.e. the projects being built are fixed; it's the GCC version that varies.
@@ -39,7 +39,7 @@ Non-goals
 Current projects tested
 =======================
 
-See :file:`test.py` for the full details
+See `test.py` for the full details
 
 * apr-1.7.0
 * coreutils-9.1
