@@ -1,0 +1,16 @@
+xz-5.4.0
+========
+
+  False positives not yet in GCC bugzilla
+  =======================================
+     FALSE: common/tuklib_open_stdxxx.c:56:9: warning: leak of file descriptor ‘fd’ [CWE-775] [-Wanalyzer-fd-leak]
+       In tuklib_open_stdxxx
+       It only leaks if fd == i, and i is in the range [0, 2] inclusive
+       So arguably not a "leak", or, at least, not worth reporting.
+
+
+  To be classified
+  ================
+     TODO: xz/args.c:108:45: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
+        out-of-bounds read from byte -8 till byte -1 but region starts at byte 0
+	presumably considering when i == 0; is it missing the assertion?
