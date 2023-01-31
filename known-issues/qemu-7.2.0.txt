@@ -7,20 +7,41 @@ qemu-7.2.0
   TRUE: ../disas/sparc.c:2691:9: warning: dereference of possibly-NULL ‘sorted_opcodes’ [CWE-690] [-Wanalyzer-possible-null-dereference]
   TRUE: ../subprojects/libvhost-user/libvhost-user.c:2550:5: warning: dereference of possibly-NULL ‘elem’ [CWE-690] [-Wanalyzer-possible-null-dereference]
 
+  False positives already in GCC bugzilla
+  =======================================
+    FALSE: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    FALSE: ../qobject/json-parser.c:382:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    FALSE: ../qobject/json-parser.c:545:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    FALSE: ../qobject/json-parser.c:547:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108524
+    FALSE: ../hw/tpm/tpm_tis_common.c:311:21: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    FALSE: ../hw/tpm/tpm_tis_common.c:436:9: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+     Am assuming these were false positives; went away with fix for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108524
+
+  False positives not yet in GCC bugzilla
+  =======================================
+
+    FALSE: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on non-stream-socket file descriptor ‘sock’ [-Wanalyzer-fd-type-mismatch]
+
+    FALSE: ../target/i386/kvm/kvm.c:5145:37: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+    FALSE: ../target/i386/kvm/kvm.c:5147:28: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+    FALSE: ../target/i386/kvm/kvm.c:5148:37: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+      It's considering accessing hw_breakpoint[n].addr; for some constant n in the loop, when it has 4 elements; presumably it's unrolled it, and doesn't know that there's a limit, and nb_hw_breakpoint is limited in kvm_arch_insert_hw_breakpoint.
+      In theory it might be possible to statically prove that 0 <= nb_hw_breakpoint < 4 by analyzing kvm_arch_insert_hw_breakpoint.
+
   To be classified
   ================
-    TODO: ../hw/tpm/tpm_tis_common.c:311:21: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    TODO: ../hw/tpm/tpm_tis_common.c:436:9: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    TODO: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    TODO: ../qobject/json-parser.c:382:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    TODO: ../qobject/json-parser.c:545:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    TODO: ../qobject/json-parser.c:547:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
     TODO: ../target/ppc/misc_helper.c:78:38: warning: shift by count (‘1024’) >= precision of type (‘64’) [-Wanalyzer-shift-count-overflow]
     TODO: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on possibly invalid file descriptor ‘sock’ [-Wanalyzer-fd-use-without-check]
     TODO: [-Wanalyzer-deref-before-check]
-    TODO: [-Wanalyzer-fd-type-mismatch]
     TODO: [-Wanalyzer-malloc-leak]
     TODO: [-Wanalyzer-null-argument]
     TODO: [-Wanalyzer-null-dereference]
-    TODO: [-Wanalyzer-out-of-bounds]
+
+    TODO: ../libdecnumber/decNumber.c:6530:19: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+      In decUnitAddSub
+
     TODO: [-Wanalyzer-use-of-uninitialized-value]
+
+
+
