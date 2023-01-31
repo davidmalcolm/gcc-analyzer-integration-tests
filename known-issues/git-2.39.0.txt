@@ -15,6 +15,8 @@ git-2.39.0
       It calls "die_errno" when failing, so the "leak" is uninteresting.
       Also, perhaps code is making an assumption about lowest-numbered unused file descriptor which analyzer doesn't know about
 
+    FALSE: builtin/show-ref.c:194:20: warning: check of ‘argv’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
 
   Genuine -Wanalyzer-deref-before-check issues:
     TRUE: reftable/block.c:446:12: warning: check of ‘blockp’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
