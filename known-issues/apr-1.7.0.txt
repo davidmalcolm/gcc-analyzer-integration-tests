@@ -8,8 +8,13 @@ apr-1.7.0
     FALSE: strings/apr_snprintf.c:535:9: warning: use of uninitialized value ‘p’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       Looks like a false positive
 
+    FALSE: network_io/unix/sockets.c:241:8: warning: leak of file descriptor ‘*sock.socketdes’ [CWE-775] [-Wanalyzer-fd-leak]
+      Looks like a false positive
+
   To be classified
   ================
+    TODO: file_io/unix/filedup.c:105:16: warning: leak of file descriptor ‘rv’ [CWE-775] [-Wanalyzer-fd-leak]
+    TODO: file_io/unix/filedup.c:125:12: warning: leak of file descriptor ‘rv’ [CWE-775] [-Wanalyzer-fd-leak]
     TODO: [-Wanalyzer-fd-leak]
     TODO: [-Wanalyzer-null-dereference]
     TODO: [-Wanalyzer-possible-null-dereference]
