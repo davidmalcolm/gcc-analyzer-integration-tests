@@ -18,6 +18,7 @@
 #   USA
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import hashlib
 import json
 import logging
@@ -120,6 +121,15 @@ def remove_line(path, text):
     """FIXME"""
     remove_text(path, text + '\n')
 
+def fixup_file(path, old_text, new_text):
+    """FIXME"""
+    with path.open('r') as f_in:
+        old = f_in.read()
+    new = old.replace(old_text, new_text)
+    if new != old:
+        with path.open('w') as f_out:
+            f_out.write(new)
+
 ############################################################################
 
 class TestProject:
@@ -155,13 +165,17 @@ class TestProject:
             args += extra_args
         if not check:
             args.append('-k')
+        args.append('V=1')
+        cwd=Path(proj_dir, self.name)
+        logging.info('cwd: %s' % cwd)
+        logging.info('args: %s' % ' '.join(args))
         subprocess.run(args,
-                       cwd=Path(proj_dir, self.name),
+                       cwd=cwd,
                        check=check)
         logging.info('Finished invoking "make" on %s', self.name)
 
     def verify(self, config, proj_dir):
-        pass
+        raise NotImplementedError()
 
     def verify_file_exists(self, within_dir, expected_file):
         path = Path(within_dir, expected_file)
@@ -371,46 +385,95 @@ class ImageMagick(TestProject):
 class Juliet(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'Juliet')
-        self.src = Zipfile('https://samate.nist.gov/SARD/downloads/test-suites/2017-10-01-juliet-test-suite-for-c-cplusplus-v1-3.zip',
-                           'ada9d7e1c323d283446df3f55bdee0d00bda1fed786785fe98764d58688f38eb')
+        self.src = Zipfile('https://samate.nist.gov/SARD/downloads/test-suites/2022-08-11-juliet-c-cplusplus-v1-3-1-with-extra-support.zip',
+                           '331b288f17ea95076d76e7bcc1d0e307f9e78241b16e744340213c8e2986919a')
+
+    def prep(self, config, proj_dir):
+        TestProject.prep(self, config, proj_dir)
+        # TODO: fixup
+        test_case_dir = sorted([p for p in proj_dir.iterdir() if p.is_dir()])
+        logging.info('Fixing up SRCS within %s Makefiles' % len(test_case_dir))
+        # FIXME: might want a thread pool for this eventually
+        for test_case_dir in test_case_dir:
+            fixup_file(Path(test_case_dir, 'Makefile'),
+                       'SRCS := $(shell find $(SRC) -name *.cpp -or -name *.c* -or -name *.cc)',
+                       'SRCS := $(shell find $(SRC) -name *.cpp -or -name *.c -or -name *.cc)')
+        logging.info('Finished fixing up SRCS')
 
     def build(self, config, proj_dir):
-        logging.info('Invoking "make" on %s', self.name)
+        logging.info('Building Juliet')
+        test_case_dir = sorted([p for p in proj_dir.iterdir() if p.is_dir()])
+        executor = ProcessPoolExecutor(max_workers=config.num_processors)
+        for test_case_dir in test_case_dir:
+            # FIXME: while implementing, restrict to just:
+            #   240071-v2.0.0/src/testcases/CWE415_Double_Free/s01/
+            # print(test_case_dir.name)
+            #if test_case_dir.name != '240071-v2.0.0':
+            #    continue
+            #self.build_test_case(config, test_case_dir)
+            executor.submit(self.build_test_case, config, test_case_dir)
+        logging.info('Finished building Juliet')
 
-        # From the upstream Makefiles (in the per-testcase subdirectories):
-        CFLAGS='-c'
+    def build_test_case(self, config, test_case_dir):
+        logging.info('Building %s' % test_case_dir)
+
+        CFLAGS = self.get_make_var('CFLAGS', test_case_dir)
+        logging.info('CFLAGS from Makefile: %r' % CFLAGS)
+
+        #CFLAGS += ' -c'
 
         # Inject analyzer and SARIF output:
         CFLAGS += ' -fanalyzer -fdiagnostics-format=sarif-file'
 
-        # Within C/testcases/CWE440_Expected_Behavior_Violation/ we
-        # get this failure when g++ defaults to C++17 (as of GCC 11):
-        #   CWE440_Expected_Behavior_Violation__exception_01.cpp: At global scope:
-        #   CWE440_Expected_Behavior_Violation__exception_01.cpp:30:21: error: ISO C++17 does not allow dynamic exception specifications
-        #      30 | static void good1() throw (range_error) /* FIX: Declare that function throws an  exception */
-        #         |                     ^~~~~
-        # Work around this by injecting "-std=c++14"
-        # Unfortunately the upstream Makefiles don't seem to have a
-        # distinction between C and C++ flags, leading to lots of
-        # (hopefully) benign:
-        #   cc1: warning: command-line option ‘-std=c++14’ is valid for C++/ObjC++ but not for C
-        CFLAGS += ' -std=c++14'
+        CC_from_makefile = self.get_make_var('CC', test_case_dir)
+        if CC_from_makefile == 'gcc':
+            CC_to_use = config.toolchain.c_compiler_path
+        elif CC_from_makefile == 'g++':
+            CC_to_use = config.toolchain.cplusplus_compiler_path
+            # Within 103336-v1.0.0's CWE440_Expected_Behavior_Violation/ we
+            # get this failure when g++ defaults to C++17 (as of GCC 11):
+            #   CWE440_Expected_Behavior_Violation__exception_01.cpp: At global scope:
+            #   CWE440_Expected_Behavior_Violation__exception_01.cpp:30:21: error: ISO C++17 does not allow dynamic exception specifications
+            #      30 | static void good1() throw (range_error) /* FIX: Declare that function throws an  exception */
+            #         |                     ^~~~~
+            # Work around this by injecting "-std=c++14"
+            CFLAGS += ' -std=c++14'
+        elif CC_from_makefile == 'cl':
+            logging.info('CC in Makefile is "cl"; assuming Windows-specific test; skipping')
+            return
+        else:
+            raise ValueError('unexpected value of CC in %s: %r'
+                             % (Path(test_case_dir, 'Makefile'), CC_from_makefile))
+
+        logging.info('CFLAGS to use: %r' % CFLAGS)
 
         args = ['make',
+                'build',
                 config.get_make_jobs_arg(),
                 'CFLAGS=%s' % CFLAGS,
-                'CC=%s' % config.toolchain.c_compiler_path,
-                'CPP=%s' % config.toolchain.cplusplus_compiler_path,
+                'CC=%s' % CC_to_use,
                 'V=1'
                 ]
         subprocess.run(args,
-                       cwd=Path(proj_dir, 'C'),
+                       cwd=test_case_dir,
                        check=True)
-        logging.info('Finished invoking "make" on %s', self.name)
+        logging.info('Finished invoking "make"')
+        logging.info('Finished building %s' % test_case_dir)
+
+    def get_make_var(self, var_name, dir_):
+        args = ['make',
+                '-f', '/home/david/coding/gcc-analyzer-harness/print-var.mak', # FIXME
+                '-f', 'Makefile',
+                'print-%s' % var_name]
+        p = subprocess.run(args,
+                           cwd=dir_,
+                           capture_output=True,
+                           check=True)
+        return p.stdout.decode('utf-8').strip()
 
     def verify(self, config, proj_dir):
         self.verify_sarif_file_exists(proj_dir,
-                                      'C/testcases/CWE415_Double_Free/s01/CWE415_Double_Free__malloc_free_char_01.c.sarif')
+                                      '240071-v2.0.0/CWE415_Double_Free__malloc_free_char_01.c.sarif')
 
 class Kernel(TestProject):
     def __init__(self):
@@ -583,6 +646,8 @@ def build_project(config, proj):
     # scrape out the results
     results = []
     for sarif_path in Path(proj_dir).glob('**/*.sarif'):
+        if sarif_path.name == 'manifest.sarif':
+            continue
         # Validate against the schema
         logging.info('Validating %s' % sarif_path)
         with sarif_path.open() as f:
