@@ -81,18 +81,66 @@ class ClassificationFile:
         rule = ClassificationRule(kind, line)
         self.rules.append(rule)
 
-    def classify(self, result):
+    def classify(self, sarif_path, result):
         for rule in self.rules:
             if rule.matches(result):
                 return rule.kind
         return 'UNKNOWN'
+
+class JulietClassifer:
+    def classify(self, sarif_path, result):
+        print(sarif_path)
+        manifest_path = Path(sarif_path.parent, 'manifest.sarif')
+        manifest_file = sarif.loader.load_sarif_file(manifest_path)
+        for expected_result in manifest_file.get_results():
+            #print(expected_result)
+            # e.g.
+            # {'ruleId': 'CWE-415',
+            #  'message': {'text': 'Double Free.'},
+            #  'locations': [{'physicalLocation': {'artifactLocation': {'uri': 'src/testcases/CWE415_Double_Free/s01/CWE415_Double_Free__malloc_free_char_01.c', 'index': 0}, 'region': {'startLine': 32}}}],
+            #  'taxa': [{'toolComponent': {'name': 'CWE', 'index': 0}, 'id': '415', 'index': 0}]}
+            print(get_comparable_result(expected_result, sarif_path.parent))
+            if self.matches_expected(expected_result, result):
+                return 'TRUE'
+        return 'FALSE'
+
+    def matches_expected(self, expected_result, actual_result):
+        # For now, just check for a location match
+        assert len(expected_result['locations']) == 1
+        assert len(actual_result['locations']) == 1
+        exp_loc = expected_result['locations'][0]
+        actual_loc = actual_result['locations'][0]
+        #print(exp_phys_loc)
+        #print(actual_phys_loc)
+        if self.location_matches(exp_loc, actual_loc):
+            return True
+        # Otherwise, look within paths
+        if 'codeFlows' in actual_result:
+            assert(len(actual_result['codeFlows']) == 1)
+            if 'threadFlows' in actual_result['codeFlows'][0]:
+                #print(actual_result['codeFlows'][0]['threadFlows'])
+                assert(len(actual_result['codeFlows'][0]['threadFlows']) == 1)
+                for thread_flow_loc in actual_result['codeFlows'][0]['threadFlows'][0]['locations']:
+                    #print(thread_flow_loc)
+                    if self.location_matches(exp_loc, thread_flow_loc['location']):
+                        return True
+        return False
+
+    def location_matches(self, exp_loc, actual_loc):
+        exp_phys_loc = exp_loc['physicalLocation']
+        actual_phys_loc = actual_loc['physicalLocation']
+        # TODO: compare URI
+        if exp_phys_loc['region']['startLine'] != actual_phys_loc['region']['startLine']:
+            return False
+        return True
 
 def get_sarif_paths(path):
     """
     Get a set of all sarif files below path, relative to path.
     """
     return set([sarif_path.relative_to(path)
-                for sarif_path in path.glob('**/*.sarif')])
+                for sarif_path in path.glob('**/*.sarif')
+                if sarif_path.name != 'manifest.sarif'])
 
 def get_comparable_result(result, base_src_path):
     with io.StringIO() as f:
@@ -124,24 +172,24 @@ class Comparison:
     def on_new_result(self, sarif_path, result):
         if self.verbose:
             self.report_change('new result:', sarif_path, result)
-        self.add_stat('ADDED', result)
+        self.add_stat('ADDED', sarif_path, result)
 
     def on_removed_result(self, sarif_path, result):
         if self.verbose:
             self.report_change('result went away:', sarif_path, result)
-        self.add_stat('REMOVED', result)
+        self.add_stat('REMOVED', sarif_path, result)
 
     def on_unchanged_result(self, sarif_path, old_result, new_result):
         if self.verbose:
             self.report_change('unchanged result:', sarif_path, old_result)
-        self.add_stat('UNCHANGED', old_result)
+        self.add_stat('UNCHANGED', sarif_path, old_result)
 
     def report_change(self, title, sarif_path, result):
         if self.filter_rule:
             if not self.filter_rule(result):
                 return
         heading = title.upper()
-        heading += ' %s:' % self.classifier.classify(result)
+        heading += ' %s:' % self.classifier.classify(sarif_path, result)
         if 'ruleId' in result:
             heading += ' %s:' % result['ruleId']
         print('-' * 76)
@@ -149,11 +197,11 @@ class Comparison:
         print('-' * 76)
         print(get_comparable_result(result, sarif_path.parent))
 
-    def add_stat(self, event, result):
+    def add_stat(self, event, sarif_path, result):
         if self.filter_rule:
             if not self.filter_rule(result):
                 return
-        kind = self.classifier.classify(result)
+        kind = self.classifier.classify(sarif_path, result)
         ruleId = result.get('ruleId', '')
         key = (event, ruleId, kind)
         if key in self.stats:
@@ -176,7 +224,9 @@ def main():
     parser.add_argument('before', type=Path)
     parser.add_argument('after', type=Path)
     args = parser.parse_args()
-    if args.classification_file:
+    if args.classification_file.name == 'Juliet.txt':
+        classifier = JulietClassifer()
+    elif args.classification_file:
         classifier = ClassificationFile(args.classification_file)
     else:
         classifier = None
