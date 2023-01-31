@@ -8,12 +8,23 @@ coreutils-9.1
     FALSE: lib/randint.c:76:10: warning: leak of 'randint_new(source)' [CWE-401] [-Wanalyzer-malloc-leak]
     FALSE: lib/read-file.c:215:10: warning: leak of FILE 'stream' [CWE-775] [-Wanalyzer-file-leak]
     FALSE: src/uptime.c:170:1: warning: leak of FILE 'fp' [CWE-775] [-Wanalyzer-file-leak]
+    FALSE: src/mv.c:213:10: warning: check of 'dir_to_remove' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
+  Known false positives that aren't to be fixed at the GCC side
+  =============================================================
+    FALSE: src/pwd.c:137:3: warning: heap-based buffer underwrite [CWE-124] [-Wanalyzer-out-of-bounds]
+      Happens if nth_parent is called with n == 0, which can't happen, but the analyzer can't determine that.
 
   To be classified
   ================
     TODO: src/csplit.c:388:21: warning: use after 'free_buffer' of 'buf' [CWE-416] [-Wanalyzer-use-after-free]
     TODO: src/du.c:470:10: warning: check of 'ent' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
-    TODO: src/mv.c:213:10: warning: check of 'dir_to_remove' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
+    TODO: lib/freopen-safer.c:72:10: warning: leak of file descriptor 'dup2(2, 2)' [CWE-775] [-Wanalyzer-fd-leak]
+    TODO: lib/freopen-safer.c:76:10: warning: leak of file descriptor 'dup2(1, 1)' [CWE-775] [-Wanalyzer-fd-leak]
+    TODO: lib/freopen-safer.c:80:10: warning: leak of file descriptor 'dup2(0, 0)' [CWE-775] [-Wanalyzer-fd-leak]
+      All of the above are in function 'freopen_safer'
+
     TODO: [-Wanalyzer-fd-leak]
     TODO: [-Wanalyzer-file-leak]
     TODO: [-Wanalyzer-malloc-leak]
