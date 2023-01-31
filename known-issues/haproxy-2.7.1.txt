@@ -1,17 +1,83 @@
 haproxy-2.7.1
 =============
 
-  TRUE: src/cfgparse-ssl.c:1033:17: warning: dereference of possibly-NULL ‘p1’ [CWE-690] [-Wanalyzer-possible-null-dereference]
-  TRUE: src/flt_http_comp.c:693:17: warning: dereference of possibly-NULL ‘comp’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+  True positives
+  ==============
 
-  False positives not yet in GCC bugzilla:
+    TRUE: src/cfgparse-ssl.c:1033:17: warning: dereference of possibly-NULL ‘p1’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+    TRUE: src/flt_http_comp.c:693:17: warning: dereference of possibly-NULL ‘comp’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+
+  False positives already in GCC bugzilla
+  =======================================
+
+    FALSE: src/tcpcheck.c:4973:12: warning: check of ‘meth’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: src/tcpcheck.c:4973:12: warning: check of ‘meth’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: src/tcpcheck.c:4982:12: warning: check of ‘uri’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108475
+      Lots of false positives e.g. in tcpcheck.c: proxy_parse_httpchk_req
+
+  False positives not yet in GCC bugzilla
+  =======================================
+
     FALSE: src/mqtt.c:1251:18: warning: use of uninitialized value ‘parser’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: src/namespace.c:97:16: warning: leak of file descriptor ‘fd’ [CWE-775] [-Wanalyzer-fd-leak]
+
+    FALSE: src/proto_tcp.c:808:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
+    FALSE: include/haproxy/fd.h:294:13: warning: leak of file descriptor [CWE-775] [-Wanalyzer-fd-leak]
+      2nd one seems to be a dup of the 1st; use of "listen"
+
+    FALSE: src/proto_tcp.c:776:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
+    FALSE: src/proto_tcp.c:776:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
+    FALSE: src/proto_udp.c:219:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
+    FALSE: src/proto_udp.c:198:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
+      These all seem similar; use of "connect"
+
+    FALSE: src/proto_uxst.c:262:19: warning: leak of file descriptor ‘socket(1, 1, 0)’ [CWE-775] [-Wanalyzer-fd-leak]
+
+    FALSE: src/cache.c:1729:20: warning: check of ‘etag_buffer’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: src/cfgparse.c:482:29: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: src/cfgparse.c:491:20: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
 
   To be classified
   ================
+    TODO: src/backend.c:884:17: warning: dereference of NULL ‘srv’ [CWE-476] [-Wanalyzer-null-dereference]
+       "srv" in alloc_dst_address is param 2
+       comes from this in connect_server:
+	/* in standard configuration, srv will be valid
+	 * it can be NULL for dispatch mode or transparent backend */
+       	srv = objt_server(s->target);
+       but the path isn't showing inside objt_server.
+       FIXME: why isn't it showing the path inside objt_server?
+       FIXME: ideally would should "passing NULL as param 2"
+       Is this an invariant that the analyzer can't see?
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+static inline struct server *__objt_server(enum obj_type *t)
+{
+	return container_of(t, struct server, obj_type);
+}
+
+static inline struct server *objt_server(enum obj_type *t)
+{
+	if (!t || *t != OBJ_TYPE_SERVER)
+		return NULL;
+	return __objt_server(t);
+}
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    TODO: src/haproxy.c:3206:9: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
+      DECLARE_INIT_SECTION(STG_PREPARE); is 8 bytes
+      RUN_INITCALLS(STG_PREPARE); says:
+        out-of-bounds read from byte 8 till byte 15 but ‘__start_i_STG_PREPARE’ ends at byte 8
+    TODO: src/ssl_ckch.c:985:9: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
+      out-of-bounds read from byte -8 till byte -1 but region starts at byte 0
+      Is it getting confused about an intrusive linked list?
+    TODO: src/ssl_crtlist.c:207:9: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
+    TODO: src/ssl_crtlist.c:208:14: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
+      out-of-bounds read from byte -16 till byte -9 but region starts at byte 0
+      Is it getting confused about an intrusive linked list?
+      
     TODO: [-Wanalyzer-deref-before-check]
     TODO: [-Wanalyzer-double-free]
-    TODO: [-Wanalyzer-fd-leak]
     TODO: [-Wanalyzer-malloc-leak]
     TODO: [-Wanalyzer-null-argument]
     TODO: [-Wanalyzer-null-dereference]
