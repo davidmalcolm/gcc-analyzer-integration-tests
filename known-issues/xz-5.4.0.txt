@@ -8,9 +8,35 @@ xz-5.4.0
        It only leaks if fd == i, and i is in the range [0, 2] inclusive
        So arguably not a "leak", or, at least, not worth reporting.
 
+     FALSE: filter_encoder.c:256:21: warning: dereference of NULL 'fe' [CWE-476] [-Wanalyzer-null-dereference]
+       lzma_mt_block_size uses encoder_find
+       encoder_find has a return NULL error-handling path
+       But presumably lzma_mt_block_size is only ever called on filters that have IDs that will be found
 
-  To be classified
-  ================
-     TODO: xz/args.c:108:45: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
-        out-of-bounds read from byte -8 till byte -1 but region starts at byte 0
-	presumably considering when i == 0; is it missing the assertion?
+     In function 'lzma_index_iter_locate':
+       FALSE: common/index.c:1245:16: warning: dereference of NULL 'group' [CWE-476] [-Wanalyzer-null-dereference]
+         This is immediately after an:
+	    assert(group != NULL);
+	 so presumably a false positive.
+
+     FALSE: args.c:108:45: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
+        We have:
+			assert(i > 0);
+			opt_block_list[i] = opt_block_list[i - 1];
+	so presumably impossible
+
+     In function 'iter_set_info':
+       FALSE: common/index.c:1029:31: warning: dereference of NULL 'stream' [CWE-476] [-Wanalyzer-null-dereference]
+       FALSE: common/index.c:1038:32: warning: dereference of NULL 'stream' [CWE-476] [-Wanalyzer-null-dereference]
+          It's considering the path where index_tree_locate returns NULL (is this possible)?
+	  which gets used here in lzma_index_iter_locate:
+            const index_group *group = index_tree_locate(&stream->groups, target);
+            assert(group != NULL);
+	  Note the assertion.
+	  This gets used to set up:
+            iter->internal[ITER_GROUP].p = group;
+	  which is then used by iter_set_info:
+	    const index_group *group = iter->internal[ITER_GROUP].p;
+	    [...snip...]
+            iter->stream.number = stream->number;
+	  Probably need to make use of the assertions here.
