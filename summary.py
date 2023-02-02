@@ -38,9 +38,9 @@ class Summary:
         if self.filter_rule:
             if not self.filter_rule(result):
                 return
-        if self.verbose:
-            self.report_result(sarif_path, result)
         kind = self.classifier.classify(sarif_path, result)
+        if self.verbose:
+            self.report_result(sarif_path, kind, result)
         ruleId = result.get('ruleId', '')
         key = (ruleId, kind)
         if key in self.stats:
@@ -48,8 +48,8 @@ class Summary:
         else:
             self.stats[key] = 1
 
-    def report_result(self, sarif_path, result):
-        heading = '%s:' % self.classifier.classify(sarif_path, result)
+    def report_result(self, sarif_path, kind, result):
+        heading = '%s:' % kind
         if 'ruleId' in result:
             heading += ' %s:' % result['ruleId']
         print('-' * 76)
