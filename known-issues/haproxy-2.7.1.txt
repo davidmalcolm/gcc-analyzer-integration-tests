@@ -16,21 +16,21 @@ haproxy-2.7.1
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108475
       Lots of false positives e.g. in tcpcheck.c: proxy_parse_httpchk_req
 
-  False positives not yet in GCC bugzilla
-  =======================================
-
-    FALSE: src/mqtt.c:1251:18: warning: use of uninitialized value ‘parser’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: src/namespace.c:97:16: warning: leak of file descriptor ‘fd’ [CWE-775] [-Wanalyzer-fd-leak]
-
     FALSE: src/proto_tcp.c:808:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
     FALSE: include/haproxy/fd.h:294:13: warning: leak of file descriptor [CWE-775] [-Wanalyzer-fd-leak]
       2nd one seems to be a dup of the 1st; use of "listen"
-
     FALSE: src/proto_tcp.c:776:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
     FALSE: src/proto_tcp.c:776:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
     FALSE: src/proto_udp.c:219:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
     FALSE: src/proto_udp.c:198:12: warning: leak of file descriptor ‘*rx.fd’ [CWE-775] [-Wanalyzer-fd-leak]
       These all seem similar; use of "connect"
+      Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108648
+
+  False positives not yet in GCC bugzilla
+  =======================================
+
+    FALSE: src/mqtt.c:1251:18: warning: use of uninitialized value ‘parser’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: src/namespace.c:97:16: warning: leak of file descriptor ‘fd’ [CWE-775] [-Wanalyzer-fd-leak]
 
     FALSE: src/proto_uxst.c:262:19: warning: leak of file descriptor ‘socket(1, 1, 0)’ [CWE-775] [-Wanalyzer-fd-leak]
 
