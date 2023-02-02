@@ -738,6 +738,11 @@ def main():
     if args.projects:
         # Filter to the specified projects
         all_projects = default_projects + failing_projects
+        all_project_names = set([project.name for project in all_projects])
+        for arg in args.projects:
+            if arg not in all_project_names:
+                logging.error('unrecognized project: %s' % arg)
+
         projects = [project
                     for project in all_projects
                     if project.name in args.projects]
