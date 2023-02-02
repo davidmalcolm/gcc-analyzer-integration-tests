@@ -25,6 +25,7 @@ import logging
 import os
 from pathlib import Path, PurePath
 import subprocess
+import sys
 import threading
 from urllib.parse import urlparse
 
@@ -417,7 +418,7 @@ class Juliet(TestProject):
     def build_test_case(self, config, test_case_dir):
         logging.info('Building %s' % test_case_dir)
 
-        CFLAGS = self.get_make_var('CFLAGS', test_case_dir)
+        CFLAGS = self.get_make_var(config, 'CFLAGS', test_case_dir)
         logging.info('CFLAGS from Makefile: %r' % CFLAGS)
 
         #CFLAGS += ' -c'
@@ -425,7 +426,7 @@ class Juliet(TestProject):
         # Inject analyzer and SARIF output:
         CFLAGS += ' -fanalyzer -fdiagnostics-format=sarif-file'
 
-        CC_from_makefile = self.get_make_var('CC', test_case_dir)
+        CC_from_makefile = self.get_make_var(config, 'CC', test_case_dir)
         if CC_from_makefile == 'gcc':
             CC_to_use = config.toolchain.c_compiler_path
         elif CC_from_makefile == 'g++':
@@ -460,9 +461,9 @@ class Juliet(TestProject):
         logging.info('Finished invoking "make"')
         logging.info('Finished building %s' % test_case_dir)
 
-    def get_make_var(self, var_name, dir_):
+    def get_make_var(self, config, var_name, dir_):
         args = ['make',
-                '-f', '/home/david/coding/gcc-analyzer-harness/print-var.mak', # FIXME
+                '-f', Path(config.abs_src_dir, 'print-var.mak'),
                 '-f', 'Makefile',
                 'print-%s' % var_name]
         p = subprocess.run(args,
@@ -608,7 +609,8 @@ class Zlib(TestProject):
 ############################################################################
 
 class Config:
-    def __init__(self, toolchain, downloads_dir, run_dir, sarif_schema_path):
+    def __init__(self, abs_src_dir, toolchain, downloads_dir, run_dir, sarif_schema_path):
+        self.abs_src_dir = abs_src_dir
         self.toolchain = toolchain
         self.downloads_dir = downloads_dir
         self.run_dir = run_dir
@@ -686,7 +688,10 @@ def main():
     toolchain = GCC(args.gcc_bin_path)
     toolchain.verify()
 
-    config = Config(toolchain,
+    abs_src_dir = Path(sys.argv[0]).parent.absolute()
+
+    config = Config(abs_src_dir,
+                    toolchain,
                     args.downloads_dir,
                     args.run_dir,
                     args.sarif_schema_path)
