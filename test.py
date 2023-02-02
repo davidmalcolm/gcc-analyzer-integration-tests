@@ -679,6 +679,8 @@ def main():
     parser.add_argument('--downloads-dir', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--sarif-schema-path', type=Path, required=True)
+    parser.add_argument('--projects', required=False, nargs="+", metavar='PROJNAME',
+                        help="If provided, restrict to just the named project(s)")
     args = parser.parse_args()
     logging.info('gcc_bin_path: %s' % args.gcc_bin_path)
     logging.info('downloads_dir: %s' % args.downloads_dir)
@@ -698,7 +700,7 @@ def main():
 
     config.run_dir.mkdir(exist_ok=True)
 
-    projects = [
+    default_projects = [
         Apr(),
         Coreutils(),
         Doom(),
@@ -733,7 +735,17 @@ def main():
         Pixman(),
     ]
 
-    if 1:
+    if args.projects:
+        # Filter to the specified projects
+        all_projects = default_projects + failing_projects
+        projects = [project
+                    for project in all_projects
+                    if project.name in args.projects]
+    else:
+        projects = default_projects
+    logging.info('projects: %s' % [proj.name for proj in projects])
+
+    if len(projects) > 1:
         # Build the projects in parallel
         threads = []
         for proj in projects:
