@@ -7,6 +7,13 @@ qemu-7.2.0
   TRUE: ../disas/sparc.c:2691:9: warning: dereference of possibly-NULL ‘sorted_opcodes’ [CWE-690] [-Wanalyzer-possible-null-dereference]
   TRUE: ../subprojects/libvhost-user/libvhost-user.c:2550:5: warning: dereference of possibly-NULL ‘elem’ [CWE-690] [-Wanalyzer-possible-null-dereference]
 
+  TRUE: ../tests/qtest/libqtest.c:631:73: warning: check of ‘*words’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+     In qtest_rsp_args, there's this deref:
+       if (strcmp(words[0], "IRQ") == 0) {
+     before this check:
+       g_assert(words[0] != NULL);
+     Test coverage added to gcc upstream in r13-5654-g598e10cf415f0a.
+
   False positives already in GCC bugzilla
   =======================================
     FALSE: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
@@ -18,10 +25,11 @@ qemu-7.2.0
     FALSE: ../hw/tpm/tpm_tis_common.c:436:9: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
      Am assuming these were false positives; went away with fix for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108524
 
+    FALSE: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on non-stream-socket file descriptor ‘sock’ [-Wanalyzer-fd-type-mismatch]
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108633
+
   False positives not yet in GCC bugzilla
   =======================================
-
-    FALSE: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on non-stream-socket file descriptor ‘sock’ [-Wanalyzer-fd-type-mismatch]
 
     FALSE: ../target/i386/kvm/kvm.c:5145:37: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
     FALSE: ../target/i386/kvm/kvm.c:5147:28: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
