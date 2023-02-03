@@ -86,7 +86,7 @@ class ClassificationFile:
                 return rule.kind
         return 'UNKNOWN'
 
-class JulietClassifer:
+class JulietClassifier:
     def classify(self, sarif_path, result):
         print(sarif_path)
         manifest_path = Path(sarif_path.parent, 'manifest.sarif')
@@ -135,7 +135,7 @@ class JulietClassifer:
 
 def get_classifier(path):
     if path.name == 'Juliet.txt':
-        return JulietClassifer()
+        return JulietClassifier()
     elif path:
         return ClassificationFile(path)
     else:
