@@ -25,6 +25,8 @@ from pathlib import Path, PurePath
 import subprocess
 from urllib.parse import urlparse
 
+from results import ClassificationFile, JulietClassifier
+
 ############################################################################
 # Various support classes
 ############################################################################
@@ -209,6 +211,10 @@ class TestProject:
         """
         self.configure(config.toolchain, proj_dir)
         self.make(config, proj_dir)
+
+    def get_classifier(self, config):
+        path = Path(config.abs_src_dir, 'known-issues', self.name + '.txt')
+        return ClassificationFile(path)
 
 ############################################################################
 # Various specific projects
@@ -452,6 +458,9 @@ class Juliet(TestProject):
     def verify(self, config, proj_dir):
         self.verify_sarif_file_exists(proj_dir,
                                       '240071-v2.0.0/CWE415_Double_Free__malloc_free_char_01.c.sarif')
+
+    def get_classifier(self, config):
+        return JulietClassifier()
 
 class Kernel(TestProject):
     def __init__(self):
