@@ -71,6 +71,10 @@ class ClassificationFile:
                 if m:
                     self.add_rule('FALSE', m.group(1))
                     continue
+                m = re.match('^EMBARGOED: (.+)$', line)
+                if m:
+                    self.add_rule('EMBARGOED', m.group(1))
+                    continue
                 m = re.match('^TODO: (.+)$', line)
                 if m:
                     self.add_rule('TODO', m.group(1))

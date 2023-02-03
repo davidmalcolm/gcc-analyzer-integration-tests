@@ -30,7 +30,7 @@ from sarifdump import GccStyleDumper
 from projects import get_projects
 from results import get_classifier, get_sarif_paths, get_comparable_result, get_comparable_results
 
-GOOD_KINDS = {'TRUE'}
+GOOD_KINDS = {'TRUE', 'EMBARGOED'}
 BAD_KINDS = {'FALSE', 'UNKNOWN', 'TODO'}
 
 class Rule:
@@ -105,7 +105,7 @@ class Summary:
         for score, rule in sorted(scores, key=cmp_to_key(compare_score_lines)):
             print('%s: %2.2f%%' % (rule.rule_id, score * 100))
             for kind in sorted(rule.stats_by_kind):
-                print('%10s: %s' % (kind, rule.stats_by_kind[kind]))
+                print('%12s: %s' % (kind, rule.stats_by_kind[kind]))
 
 class SummaryConfig:
     def __init__(self, abs_src_dir, projects, run_dir):
