@@ -26,6 +26,10 @@ haproxy-2.7.1
       These all seem similar; use of "connect"
       Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108648
 
+    FALSE: src/sink.c:786:13: warning: use of uninitialized value ‘ring.buf.data’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      Doesn't seem to recognize that when "read" returns the given size that the buffer is fully populated.
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108661
+
   False positives not yet in GCC bugzilla
   =======================================
 

@@ -1,12 +1,14 @@
 git-2.39.0
 ==========
 
-  False positives already in GCC bugzilla:
+  False positives already in GCC bugzilla
+  =======================================
     FALSE: pack-revindex.c:250:20: warning: check of ‘data’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
       the check is in a "cleanup:" section which can be reached from various places in supergraph; "data" might or might not be NULL
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108455
 
-  False positives not yet in GCC bugzilla:
+  False positives not yet in GCC bugzilla
+  =======================================
     FALSE: http-fetch.c:66:21: warning: use of uninitialized value ‘results.curl_result’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
     FALSE: fsmonitor-settings.c:208:9: warning: leak of ‘strdup(path)’ [CWE-401] [-Wanalyzer-malloc-leak]
       Suspected dup of PR analyzer/108252.

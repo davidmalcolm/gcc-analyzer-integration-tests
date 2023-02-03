@@ -107,11 +107,8 @@ linuxdoom-1.10
       lumpinfo = malloc(1);
     but seems dubious; why not used sizeof(lumpinfo_t)?
 
-  To be classified
-  ================
-
-    TODO: w_wad.c:196:27: warning: use of uninitialized value ‘header.numlumps’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    TODO: w_wad.c:197:31: warning: use of uninitialized value ‘header.infotableofs’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+  TRUE: w_wad.c:196:27: warning: use of uninitialized value ‘header.numlumps’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+  TRUE: w_wad.c:197:31: warning: use of uninitialized value ‘header.infotableofs’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
        There's a:
           read (handle, &header, sizeof(header));
        where:
@@ -129,5 +126,6 @@ typedef struct
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        so the "read" ought to initialize it, if data was read.
        But nothing's checking that "read" succeeds; if it fails, "header" could still be uninit.
-       What is -fanalyzer thinking?
 
+  To be classified
+  ================
