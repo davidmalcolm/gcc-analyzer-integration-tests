@@ -114,10 +114,16 @@ def main():
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('Started')
 
+    help_epilog = 'Default projects: '
+    for proj in get_projects(None):
+        help_epilog += ' %s' % proj.name
+
     parser = argparse.ArgumentParser(
-        prog = 'ProgramName',
-        description = 'What the program does',
-        epilog = 'Text at the bottom of help')
+        description = '''
+        Build various projects with GCC -fanalyzer and gather
+        diagnostics in SARIF format
+        ''',
+        epilog = help_epilog)
     parser.add_argument('--gcc-bin-path', type=Path, required=True)
     parser.add_argument('--downloads-dir', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
