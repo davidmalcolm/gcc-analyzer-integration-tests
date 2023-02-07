@@ -28,7 +28,7 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_sarif_paths, get_comparable_result, get_comparable_results
+from results import get_classifier, get_comparable_result, ProjectBuild
 
 GOOD_KINDS = {'TRUE', 'EMBARGOED'}
 BAD_KINDS = {'FALSE', 'UNKNOWN', 'TODO'}
@@ -143,16 +143,14 @@ def main():
                       filter_rule=None)#filter_rule)
 
     for proj in projects:
-        #print(proj)
-        proj_dir = Path(config.run_dir, proj.name)
-        #print(proj_dir)
-        sarif_paths = get_sarif_paths(proj_dir)
+        proj_build = ProjectBuild(proj, Path(config.run_dir, proj.name))
+        sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
             #print(rel_sarif_path)
-            results, result_dict = get_comparable_results(proj_dir, rel_sarif_path)
+            results, result_dict = proj_build.get_comparable_results(rel_sarif_path)
             for str_result in sorted(results):
                 result = result_dict[str_result]
-                summary.on_result(proj, Path(proj_dir, rel_sarif_path), result)
+                summary.on_result(proj, proj_build.get_path(rel_sarif_path), result)
 
     summary.report_summary()
 

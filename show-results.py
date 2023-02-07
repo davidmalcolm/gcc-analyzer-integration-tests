@@ -28,7 +28,7 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_sarif_paths, get_comparable_result, get_comparable_results
+from results import get_classifier, get_comparable_result, ProjectBuild
 
 GOOD_KINDS = {'TRUE', 'EMBARGOED'}
 BAD_KINDS = {'FALSE', 'UNKNOWN', 'TODO'}
@@ -115,10 +115,10 @@ def main():
         return True
 
     for proj in projects:
-        proj_dir = Path(config.run_dir, proj.name)
-        sarif_paths = get_sarif_paths(proj_dir)
+        proj_build = ProjectBuild(proj, Path(config.run_dir, proj.name))
+        sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
-            results, result_dict = get_comparable_results(proj_dir, rel_sarif_path)
+            results, result_dict = proj_build.get_comparable_results(rel_sarif_path)
             for str_result in sorted(results):
                 result = result_dict[str_result]
                 if args.rule_id:
@@ -136,7 +136,7 @@ def main():
                 print(heading)
                 print('-' * 76)
                 print(get_comparable_result(result,
-                                            Path(proj_dir, rel_sarif_path.parent)))
+                                            proj_build.get_path(rel_sarif_path).parent))
 
 if __name__ == '__main__':
     main()

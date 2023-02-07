@@ -161,6 +161,12 @@ def get_comparable_result(result, base_src_path):
 
 def get_comparable_results(base_sarif_path, rel_sarif_path):
     """
+    Load a .sarif file found at rel_sarif_path below base_sarif_path.
+    Return a (set, dict) pair where:
+    - the set is a set of strings containing stringified versions
+    of the results (with the paths expressed as they were in the sarif file,
+    to help comparisons)
+    - the dict is a mapping from the above strings to sarif result objects
     """
     str_results = []
     d = {}
@@ -172,3 +178,36 @@ def get_comparable_results(base_sarif_path, rel_sarif_path):
         str_results.append(s)
         d[s] = result
     return set(str_results), d
+
+class ProjectBuild:
+    """
+    A particular build of a particular project.
+    """
+    def __init__(self, project, proj_build_dir):
+        self.project = project
+        self.proj_build_dir = proj_build_dir
+
+    def get_rel_sarif_paths(self):
+        """
+        Get a set of all .sarif files below the project build dir,
+        as paths expressed relative to it.
+        """
+        return get_sarif_paths(self.proj_build_dir)
+
+    def get_comparable_results(self, rel_sarif_path):
+        """
+        Load a .sarif file found at rel_sarif_path below self.proj_build_dir.
+        Return a (set, dict) pair where:
+        - the set is a set of strings containing stringified versions
+        of the results (with the paths expressed as they were in the sarif file,
+        to help comparisons)
+        - the dict is a mapping from the above strings to sarif result objects
+        """
+        return get_comparable_results(self.proj_build_dir, rel_sarif_path)
+
+    def get_path(self, rel_path):
+        """
+        Given a path relative to the top-level build directory for this project,
+        convert to a path that includes self.proj_build_dir.
+        """
+        return Path(self.proj_build_dir, rel_path)
