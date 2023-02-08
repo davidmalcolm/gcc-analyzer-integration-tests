@@ -28,6 +28,53 @@ qemu-7.2.0
     FALSE: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on non-stream-socket file descriptor ‘sock’ [-Wanalyzer-fd-type-mismatch]
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108633
 
+    FALSE: ../target/i386/tcg/fpu_helper.c:1136:21: warning: use of uninitialized value ‘accum’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      and a bunch like this in softfloat handling
+    FALSE: ../target/m68k/softfloat.c:2469:19: warning: use of uninitialized value ‘fp1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      in function 'floatx80_etoxm1' where it seems to be blithely ignoring the writes to fp1.
+    FALSE: ../target/m68k/softfloat.c:2215:11: warning: use of uninitialized value ‘fp0’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      seems to have the shortest execution path:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+In function 'floatx80_acos':
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2215:11: warning: use of uninitialized value ‘fp0’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2174:14: (1) region created on stack here
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2174:14: (2) capacity: 16 bytes
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2183:8: (3) following ‘false’ branch...
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2189:5: (4) ...to here
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2191:8: (5) following ‘false’ branch...
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2206:5: (6) ...to here
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../target/m68k/softfloat.c:2215:11: (7) use of uninitialized value ‘fp0’ here
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108704
+
+    FALSE: ../dump/win_dump.c:105:12: warning: use of uninitialized value ‘ptr32’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      In cpu_read_ptr has:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+    ret = cpu_memory_rw_debug(cpu, addr, x64 ? (void *)&ptr64 : (void *)&ptr32,
+            win_dump_ptr_size(x64), 0);
+
+    *ptr = x64 ? ptr64 : ptr32;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       where presumably cpu_memory_rw_debug inits either ptr64 or ptr32.
+       Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108725
+
+    FALSE: /usr/include/glib-2.0/glib/glib-autocleanups.h:28:3: warning: use of uninitialized value ‘*(void **)&val’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+       with:
+           g_autofree char *val = NULL;
+       where for some reason it has:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+In function 'spapr_cap_get_string':
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../hw/ppc/spapr_caps.c:103:22: (1) region created on stack here
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../hw/ppc/spapr_caps.c:106:8: (2) following ‘true’ branch...
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../hw/ppc/spapr_caps.c:107:9: (3) ...to here
+/home/david/coding-3/gcc-build/test/control/x86_64-pc-linux-gnu/integration-tests/qemu-7.2.0/qemu-7.2.0/build/../hw/ppc/spapr_caps.c:103:22: (4) inlined call to ‘g_autoptr_cleanup_generic_gfree’ from ‘spapr_cap_get_string’
+In function 'g_autoptr_cleanup_generic_gfree':
+/usr/include/glib-2.0/glib/glib-autocleanups.h:28:3: (5) use of uninitialized value ‘*(void **)&val’ here
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        and there are a few similar to this
+	Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108733
+
+
   False positives not yet in GCC bugzilla
   =======================================
 

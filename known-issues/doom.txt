@@ -126,6 +126,7 @@ typedef struct
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        so the "read" ought to initialize it, if data was read.
        But nothing's checking that "read" succeeds; if it fails, "header" could still be uninit.
+       See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108689
 
   To be classified
   ================
