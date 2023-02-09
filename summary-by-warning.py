@@ -103,7 +103,7 @@ class Summary:
         scores = [(rule.get_score(), rule)
                   for rule in self.stats_by_rule_id.values()]
         for score, rule in sorted(scores, key=cmp_to_key(compare_score_lines)):
-            print('%s: %2.2f%%' % (rule.rule_id, score * 100))
+            print(f'{rule.rule_id}: {score * 100:2.2f}% (GOOD: {rule.good} BAD: {rule.bad})')
             for kind in sorted(rule.stats_by_kind):
                 print('%12s: %s' % (kind, rule.stats_by_kind[kind]))
 
