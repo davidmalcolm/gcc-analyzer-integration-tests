@@ -21,13 +21,13 @@ linuxdoom-1.10
   SKIP: error: initializer element is not constant
 
   False positives already in GCC bugzilla:
-    FALSE: p_maputl.c:151:8: warning: use of uninitialized value ‘p2’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: p_maputl.c:151:8: warning: use of uninitialized value ‘p1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: p_maputl.c:152:16: warning: use of uninitialized value ‘p1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: p_floor.c:503:9: warning: use of uninitialized value ‘speed’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: p_floor.c:504:9: warning: use of uninitialized value ‘stairsize’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: p_floor.c:532:17: warning: use of uninitialized value ‘stairsize’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: p_floor.c:547:17: warning: use of uninitialized value ‘speed’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_maputl.c:151:8: warning: use of uninitialized value ‘p2’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_maputl.c:151:8: warning: use of uninitialized value ‘p1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_maputl.c:152:16: warning: use of uninitialized value ‘p1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_floor.c:503:9: warning: use of uninitialized value ‘speed’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_floor.c:504:9: warning: use of uninitialized value ‘stairsize’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_floor.c:532:17: warning: use of uninitialized value ‘stairsize’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: p_floor.c:547:17: warning: use of uninitialized value ‘speed’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105273#c5
 
   False positives not yet in GCC bugzilla:

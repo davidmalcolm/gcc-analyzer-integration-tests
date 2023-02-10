@@ -3,7 +3,7 @@ git-2.39.0
 
   False positives already in GCC bugzilla
   =======================================
-    FALSE: pack-revindex.c:250:20: warning: check of ‘data’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: pack-revindex.c:250:20: warning: check of ‘data’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
       the check is in a "cleanup:" section which can be reached from various places in supergraph; "data" might or might not be NULL
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108455
 

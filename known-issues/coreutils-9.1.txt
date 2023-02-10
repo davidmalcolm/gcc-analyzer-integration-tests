@@ -6,17 +6,17 @@ coreutils-9.1
   False positives already in GCC bugzilla
   =======================================
 
-    FALSE: src/cksum.c:224:20: warning: use of uninitialized value '*datap_52' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: src/cksum.c:224:38: warning: use of uninitialized value '*datap_77' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/cksum.c:224:20: warning: use of uninitialized value '*datap_52' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/cksum.c:224:38: warning: use of uninitialized value '*datap_77' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       Doesn't seem to be treating fread as populating "buf".
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108664
 
-    FALSE: src/sum.c:73:21: warning: use of uninitialized value '*buffer_56 + i_41' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: src/sum.c:89:19: warning: use of uninitialized value '*buffer_56 + i_42' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: src/sum.c:151:12: warning: use of uninitialized value '*buffer_42 + i_30' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
-    FALSE: src/sum.c:163:10: warning: use of uninitialized value '*buffer_42 + i_31' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/sum.c:73:21: warning: use of uninitialized value '*buffer_56 + i_41' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/sum.c:89:19: warning: use of uninitialized value '*buffer_56 + i_42' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/sum.c:151:12: warning: use of uninitialized value '*buffer_42 + i_30' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/sum.c:163:10: warning: use of uninitialized value '*buffer_42 + i_31' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       Similar to src/cksum.c:224:20: warning: use of uninitialized value, but might need logic about considering the buffer fully initialized.
-    FALSE: src/sum.c:99:3: warning: use of uninitialized value '*(unsigned int *)&checksum' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: src/sum.c:99:3: warning: use of uninitialized value '*(unsigned int *)&checksum' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       It's initialized here:
          int checksum = 0;	/* The checksum mod 2^16. */
       so presumably this is a false positive.

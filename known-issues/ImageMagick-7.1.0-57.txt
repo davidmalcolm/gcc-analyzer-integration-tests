@@ -1,7 +1,21 @@
 ImageMagick-7.1.0-57
 ====================
 
-  False positives not yet in GCC bugzilla:
+  False positives in GCC bugzilla
+  ===============================
+    GCCBZ: coders/bgr.c:146:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/bmp.c:626:7: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/cmyk.c:146:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/dib.c:595:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/dib.c:597:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/dib.c:599:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/ftxt.c:493:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/gray.c:147:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: coders/map.c:148:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+      Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108745
+
+  False positives not yet in GCC bugzilla
+  =======================================
     FALSE: coders/msl.c:7634:1: warning: missing call to 'va_end' [-Wanalyzer-va-list-leak]
     FALSE: coders/msl.c:7667:1: warning: missing call to 'va_end' [-Wanalyzer-va-list-leak]
     FALSE: coders/svg.c:3351:1: warning: missing call to 'va_end' [-Wanalyzer-va-list-leak]

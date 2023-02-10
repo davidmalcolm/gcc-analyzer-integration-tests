@@ -28,10 +28,8 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_comparable_result, ProjectBuild
-
-GOOD_KINDS = {'TRUE', 'EMBARGOED'}
-BAD_KINDS = {'FALSE', 'UNKNOWN', 'TODO'}
+from results import get_classifier, get_comparable_result, ProjectBuild, \
+    GOOD_KINDS, BAD_KINDS
 
 class Summary:
     def __init__(self, config, verbose, filter_rule):

@@ -16,23 +16,23 @@ qemu-7.2.0
 
   False positives already in GCC bugzilla
   =======================================
-    FALSE: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    FALSE: ../qobject/json-parser.c:382:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    FALSE: ../qobject/json-parser.c:545:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    FALSE: ../qobject/json-parser.c:547:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    GCCBZ: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    GCCBZ: ../qobject/json-parser.c:382:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    GCCBZ: ../qobject/json-parser.c:545:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    GCCBZ: ../qobject/json-parser.c:547:16: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108524
-    FALSE: ../hw/tpm/tpm_tis_common.c:311:21: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
-    FALSE: ../hw/tpm/tpm_tis_common.c:436:9: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    GCCBZ: ../hw/tpm/tpm_tis_common.c:311:21: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
+    GCCBZ: ../hw/tpm/tpm_tis_common.c:436:9: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
      Am assuming these were false positives; went away with fix for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108524
 
-    FALSE: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on non-stream-socket file descriptor ‘sock’ [-Wanalyzer-fd-type-mismatch]
+    GCCBZ: ../tests/qtest/libqtest.c:696:11: warning: ‘listen’ on non-stream-socket file descriptor ‘sock’ [-Wanalyzer-fd-type-mismatch]
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108633
 
-    FALSE: ../target/i386/tcg/fpu_helper.c:1136:21: warning: use of uninitialized value ‘accum’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: ../target/i386/tcg/fpu_helper.c:1136:21: warning: use of uninitialized value ‘accum’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       and a bunch like this in softfloat handling
-    FALSE: ../target/m68k/softfloat.c:2469:19: warning: use of uninitialized value ‘fp1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: ../target/m68k/softfloat.c:2469:19: warning: use of uninitialized value ‘fp1’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       in function 'floatx80_etoxm1' where it seems to be blithely ignoring the writes to fp1.
-    FALSE: ../target/m68k/softfloat.c:2215:11: warning: use of uninitialized value ‘fp0’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: ../target/m68k/softfloat.c:2215:11: warning: use of uninitialized value ‘fp0’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       seems to have the shortest execution path:
 VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 In function 'floatx80_acos':
@@ -47,7 +47,7 @@ In function 'floatx80_acos':
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108704
 
-    FALSE: ../dump/win_dump.c:105:12: warning: use of uninitialized value ‘ptr32’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: ../dump/win_dump.c:105:12: warning: use of uninitialized value ‘ptr32’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
       In cpu_read_ptr has:
 VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
     ret = cpu_memory_rw_debug(cpu, addr, x64 ? (void *)&ptr64 : (void *)&ptr32,
@@ -58,7 +58,7 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
        where presumably cpu_memory_rw_debug inits either ptr64 or ptr32.
        Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108725
 
-    FALSE: /usr/include/glib-2.0/glib/glib-autocleanups.h:28:3: warning: use of uninitialized value ‘*(void **)&val’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    GCCBZ: /usr/include/glib-2.0/glib/glib-autocleanups.h:28:3: warning: use of uninitialized value ‘*(void **)&val’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
        with:
            g_autofree char *val = NULL;
        where for some reason it has:

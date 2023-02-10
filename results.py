@@ -27,6 +27,24 @@ import sarif.loader
 sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
+############################################################################
+
+# Warning classifications
+#
+# "GOOD" vs "BAD" refers to how well the analyzer is doing, rather than
+# how well the projects being analyzed are doing e.g. a true positive is
+# 'GOOD'.
+
+GOOD_KINDS = {'TRUE',  # a true positive
+              'EMBARGOED'} # a true positive that can't be shared publicly yet
+
+BAD_KINDS = {'GCCBZ', # a false positive that has an associated report in GCC's bugzilla
+             'FALSE', # a false positive that isn't in GCC's bugzilla
+             'UNKNOWN', # a diagnostic we don't know how to classify
+             'TODO'} # a diagnostic that we've seen but haven't yet classified further
+
+############################################################################
+
 def canonicalize(v):
     v = v.replace('‘', "'")
     v = v.replace('’', "'")
@@ -66,6 +84,10 @@ class ClassificationFile:
                 m = re.match('^TRUE: (.+)$', line)
                 if m:
                     self.add_rule('TRUE', m.group(1))
+                    continue
+                m = re.match('^GCCBZ: (.+)$', line)
+                if m:
+                    self.add_rule('GCCBZ', m.group(1))
                     continue
                 m = re.match('^FALSE: (.+)$', line)
                 if m:
