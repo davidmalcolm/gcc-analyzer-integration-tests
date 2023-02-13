@@ -28,36 +28,15 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_comparable_result, ProjectBuild, \
-    GOOD_KINDS, BAD_KINDS
+from results import get_classifier, get_comparable_result, ProjectBuild, Ratings
 
-class Rule:
+class Rule(Ratings):
     """
     Stats about how well a particular rule (aka warning) did.
     """
     def __init__(self, rule_id):
+        Ratings.__init__(self)
         self.rule_id = rule_id
-        self.stats_by_kind = {}
-        self.good = 0
-        self.bad = 0
-        self.total = 0
-
-    def on_kind(self, kind):
-        if kind in self.stats_by_kind:
-            self.stats_by_kind[kind] += 1
-        else:
-            self.stats_by_kind[kind] = 1
-        if kind in GOOD_KINDS:
-            self.good += 1
-        elif kind in BAD_KINDS:
-            self.bad += 1
-        else:
-            raise ValueError('unknown kind: %s' % kind)
-        self.total += 1
-
-    def get_score(self):
-        assert self.total > 0
-        return self.good / self.total
 
 class Summary:
     def __init__(self, config, verbose, filter_rule):

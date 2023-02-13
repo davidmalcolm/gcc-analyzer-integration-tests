@@ -43,6 +43,35 @@ BAD_KINDS = {'GCCBZ', # a false positive that has an associated report in GCC's 
              'UNKNOWN', # a diagnostic we don't know how to classify
              'TODO'} # a diagnostic that we've seen but haven't yet classified further
 
+class Ratings:
+    """
+    Stats about how well a particular set of stats did.
+    """
+    def __init__(self):
+        self.stats_by_kind = {}
+        self.good = 0
+        self.bad = 0
+        self.total = 0
+
+    def on_kind(self, kind):
+        if kind in self.stats_by_kind:
+            self.stats_by_kind[kind] += 1
+        else:
+            self.stats_by_kind[kind] = 1
+        if kind in GOOD_KINDS:
+            self.good += 1
+        elif kind in BAD_KINDS:
+            self.bad += 1
+        else:
+            raise ValueError('unknown kind: %s' % kind)
+        self.total += 1
+
+    def get_score(self) -> float:
+        if self.total > 0:
+            return self.good / self.total
+        else:
+            return 0.0
+
 ############################################################################
 
 def canonicalize(v):

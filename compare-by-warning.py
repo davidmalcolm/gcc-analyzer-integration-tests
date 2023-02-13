@@ -26,9 +26,53 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_comparable_result, ProjectBuild
+from results import get_classifier, get_comparable_result, ProjectBuild, Ratings
 
 DEBUG=0
+
+def describe_change(before, after) -> str:
+    result = f'{before}'
+    if after != before:
+        result += f' -> {after}'
+        delta = after - before
+        if delta > 0:
+            result += f' (+{delta})'
+        else:
+            result += f' (-{-delta})'
+    return result
+
+class RatingChanges:
+    def __init__(self):
+        self.before = Ratings()
+        self.after = Ratings()
+
+    def on_event(self, event: str, kind: str):
+        if kind == 'SKIP':
+            return
+        if event == 'ADDED':
+            self.after.on_kind(kind)
+        elif event == 'REMOVED':
+            self.before.on_kind(kind)
+        else:
+            assert event == 'UNCHANGED'
+            self.before.on_kind(kind)
+            self.after.on_kind(kind)
+
+    def describe(self) -> str:
+        if self.before.total == 0 and self.after.total == 0:
+            return ''
+        result = ''
+        result += f' {self.before.get_score() * 100:2.2f}%'
+        if self.after.get_score() != self.before.get_score():
+            result += f' -> {self.after.get_score() * 100:2.2f}%'
+        def describe_quality(title, before, after) -> str:
+            result = describe_change(before, after)
+            if result:
+                result = f' {title}: ' + result
+            return result
+        result += describe_quality('GOOD', self.before.good, self.after.good)
+        result += describe_quality('BAD', self.before.bad, self.after.bad)
+        return result
 
 class StatsItem:
     def print_item(self, indent):
@@ -175,8 +219,9 @@ class PerRuleStats(GroupedStats):
     Stats about how well a particular rule (aka warning) did.
     """
 
-    def __init__(self, rule_id):
+    def __init__(self, rule_id : str):
         GroupedStats.__init__(self)
+        self.rating_changes = RatingChanges()
         self.rule_id = rule_id
 
     def __str__(self):
@@ -185,12 +230,19 @@ class PerRuleStats(GroupedStats):
     def make_group(self, group_key):
         return PerKindStats(group_key)
 
+    def add(self, *args):
+        GroupedStats.add(self, *args)
+        self.rating_changes.on_event(args[2], args[0])
+
     def print_title(self, indent):
-        self.print(indent, self.rule_id)
+        self.print(indent, f'{self.rule_id}:{self.rating_changes.describe()}')
 
 class Comparison(GroupedStats):
     def __init__(self, classifier, verbose, filter_rule):
         GroupedStats.__init__(self)
+        self.rating_changes = RatingChanges()
+        self.before_count = 0
+        self.after_count = 0
         self.classifier = classifier
         self.verbose = verbose
         self.filter_rule = filter_rule
@@ -199,7 +251,8 @@ class Comparison(GroupedStats):
         return PerRuleStats(rule_id)
 
     def print_title(self, indent):
-        self.print(indent, 'Comparison')
+        self.print(indent,
+                   f'Comparison:{self.rating_changes.describe()}')
 
     def on_new_result(self, proj, sarif_path, result):
         if self.verbose:
@@ -235,6 +288,7 @@ class Comparison(GroupedStats):
                 return
         ruleId = result.get('ruleId', '')
         kind = self.classifier.classify(proj, sarif_path, result)
+        self.rating_changes.on_event(event, kind)
         self.add(ruleId, kind, proj, event)
 
 class ComparisonConfig:
