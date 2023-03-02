@@ -256,17 +256,17 @@ class Comparison(GroupedStats):
 
     def on_new_result(self, proj, sarif_path, result):
         if self.verbose:
-            self.report_change('new result:', sarif_path, result)
+            self.report_change('new result:', proj, sarif_path, result)
         self.add_stat('ADDED', proj, sarif_path, result)
 
     def on_removed_result(self, proj, sarif_path, result):
         if self.verbose:
-            self.report_change('result went away:', sarif_path, result)
+            self.report_change('result went away:', proj, sarif_path, result)
         self.add_stat('REMOVED', proj, sarif_path, result)
 
     def on_unchanged_result(self, proj, sarif_path, old_result, new_result):
         if self.verbose:
-            self.report_change('unchanged result:', sarif_path, old_result)
+            self.report_change('unchanged result:', proj, sarif_path, new_result)
         self.add_stat('UNCHANGED', proj, sarif_path, old_result)
 
     def report_change(self, title, proj, sarif_path, result):
@@ -307,6 +307,7 @@ class ComparisonConfig:
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('--rule-id', type=str, required=False)
     parser.add_argument('--projects', required=False, nargs="+", metavar='PROJNAME',
                         help="If provided, restrict to just the named project(s)")
@@ -325,7 +326,9 @@ def main():
                 return False;
         return True
 
-    comparison = Comparison(config, verbose=False, filter_rule=filter_rule)
+    comparison = Comparison(config,
+                            verbose=args.verbose,
+                            filter_rule=filter_rule)
 
     for proj in projects:
         before = ProjectBuild(proj, Path(config.before_build_dir, proj.name))

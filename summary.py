@@ -67,6 +67,7 @@ def main():
         prog = 'ProgramName',
         description = 'What the program does',
         epilog = 'Text at the bottom of help')
+    parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('--classification-file', type=Path, required=False)
     parser.add_argument('--rule-id', type=str, required=False)
     parser.add_argument('path', type=Path)
@@ -83,7 +84,7 @@ def main():
         return True
 
     summary = Summary(classifier,
-                      verbose=True,
+                      verbose=args.verbose,
                       filter_rule=filter_rule)
 
     for rel_sarif_path in sorted(sarif_paths):
