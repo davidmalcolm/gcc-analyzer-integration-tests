@@ -21,13 +21,49 @@ ImageMagick-7.1.0-57
     FALSE: coders/svg.c:3351:1: warning: missing call to 'va_end' [-Wanalyzer-va-list-leak]
     FALSE: coders/svg.c:3384:1: warning: missing call to 'va_end' [-Wanalyzer-va-list-leak]
 
+    FALSE: coders/meta.c:2025:18: warning: use of uninitialized value 'buffer[1]' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      In function 'readWordFromBuffer':
+        "buffer"'s two elements are clearly initialized in a loop immediately before they're read from
+
+
+    FALSE: MagickCore/utility-private.h:152:9: warning: leak of FILE 'fopen_utf8(&*clone_info.filename, "rb")' [CWE-775] [-Wanalyzer-file-leak]
+      Several of these; one is:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  if((clone_info->file=fopen_utf8(clone_info->filename,"rb"))==NULL)
+    {
+      (void) CopyMagickString(clone_info->filename+i,".pal",(size_t)
+        (MagickPathExtent-i));
+      if((clone_info->file=fopen_utf8(clone_info->filename,"rb"))==NULL)
+        {
+          clone_info->filename[i]='\0';
+          if((clone_info->file=fopen_utf8(clone_info->filename,"rb"))==NULL)
+            {
+              clone_info=DestroyImageInfo(clone_info);
+              clone_info=NULL;
+              goto NoPalette;
+            }
+        }
+    }
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      It's considering when the fopen_utf8 return NULL, but somehow treating it as having successfully opened a file.
+
   To be classified
   ================
-    TODO: coders/map.c:148:5: warning: check of 'image' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
+    TODO: MagickCore/compare.c:496:11: warning: use of uninitialized value 'j' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    TODO: MagickCore/compare.c:617:11: warning: use of uninitialized value 'j' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    TODO: MagickCore/compare.c:838:11: warning: use of uninitialized value 'j' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      All are within:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+  #pragma omp parallel for schedule(static) shared(status) \
+    magick_number_threads(image,image,rows,1)
+#endif
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
     TODO: [-Wanalyzer-allocation-size]
     TODO: [-Wanalyzer-file-leak]
     TODO: [-Wanalyzer-null-argument]
     TODO: [-Wanalyzer-null-dereference]
     TODO: [-Wanalyzer-deref-before-check]
-    TODO: [-Wanalyzer-use-of-uninitialized-value]
     TODO: [-Wanalyzer-out-of-bounds]

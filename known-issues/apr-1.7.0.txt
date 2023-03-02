@@ -1,7 +1,13 @@
 apr-1.7.0
 =========
 
-  False positives not yet in GCC bugzilla:
+  True positives
+  ==============
+
+    TRUE: tables/apr_skiplist.c:511:9: warning: dereference of possibly-NULL ‘tmp’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+
+  False positives not yet in GCC bugzilla
+  =======================================
     FALSE: network_io/unix/sockaddr.c:484:8: warning: check of ‘prev_sa’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
     FALSE: network_io/unix/sockaddr.c:704:12: warning: check of ‘d’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
       Both of these look like false positives
@@ -15,6 +21,17 @@ apr-1.7.0
   ================
     TODO: file_io/unix/filedup.c:105:16: warning: leak of file descriptor ‘rv’ [CWE-775] [-Wanalyzer-fd-leak]
     TODO: file_io/unix/filedup.c:125:12: warning: leak of file descriptor ‘rv’ [CWE-775] [-Wanalyzer-fd-leak]
+
+    TODO: tables/apr_hash.c:474:13: warning: dereference of NULL ‘new_vals’ [CWE-476] [-Wanalyzer-null-dereference]
+      We'd have to know that this definitely gets called:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+    if (base->count + overlay->count) {
+        new_vals = apr_palloc(p, sizeof(apr_hash_entry_t) *
+                              (base->count + overlay->count));
+    }
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      if the loop is entered
+
     TODO: [-Wanalyzer-fd-leak]
     TODO: [-Wanalyzer-null-dereference]
     TODO: [-Wanalyzer-possible-null-dereference]

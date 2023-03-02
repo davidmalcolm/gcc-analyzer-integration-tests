@@ -7,12 +7,18 @@ qemu-7.2.0
   TRUE: ../disas/sparc.c:2691:9: warning: dereference of possibly-NULL ‘sorted_opcodes’ [CWE-690] [-Wanalyzer-possible-null-dereference]
   TRUE: ../subprojects/libvhost-user/libvhost-user.c:2550:5: warning: dereference of possibly-NULL ‘elem’ [CWE-690] [-Wanalyzer-possible-null-dereference]
 
+  TRUE: ../hw/xtensa/mx_pic.c:321:5: warning: dereference of possibly-NULL ‘mx’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+  TRUE: ../tests/vhost-user-bridge.c:549:5: warning: dereference of possibly-NULL ‘dev’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+
   TRUE: ../tests/qtest/libqtest.c:631:73: warning: check of ‘*words’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
      In qtest_rsp_args, there's this deref:
        if (strcmp(words[0], "IRQ") == 0) {
      before this check:
        g_assert(words[0] != NULL);
      Test coverage added to gcc upstream in r13-5654-g598e10cf415f0a.
+
+  TRUE: ../hw/misc/ivshmem.c:558:9: warning: double ‘close’ of file descriptor ‘fd’ [CWE-1341] [-Wanalyzer-fd-double-close]
+    I think this is a true positive, though it might be benign
 
   False positives already in GCC bugzilla
   =======================================
@@ -74,6 +80,12 @@ In function 'g_autoptr_cleanup_generic_gfree':
         and there are a few similar to this
 	Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108733
 
+    GCCBZ: ../hw/intc/omap_intc.c:469:16: warning: dereference of NULL ‘bank’ [CWE-476] [-Wanalyzer-null-dereference]
+      Whole bunch of these, where "bank" is conditionally set to non-NULL by code guarded with:
+        if ((offset & 0xf80) == 0x80) {
+      and then a "switch (offset)" where I think these all happen in offset values where 0x80 is set.
+      Filed as https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108806
+
 
   False positives not yet in GCC bugzilla
   =======================================
@@ -83,6 +95,27 @@ In function 'g_autoptr_cleanup_generic_gfree':
     FALSE: ../target/i386/kvm/kvm.c:5148:37: warning: buffer over-read [CWE-126] [-Wanalyzer-out-of-bounds]
       It's considering accessing hw_breakpoint[n].addr; for some constant n in the loop, when it has 4 elements; presumably it's unrolled it, and doesn't know that there's a limit, and nb_hw_breakpoint is limited in kvm_arch_insert_hw_breakpoint.
       In theory it might be possible to statically prove that 0 <= nb_hw_breakpoint < 4 by analyzing kvm_arch_insert_hw_breakpoint.
+
+    FALSE: ../linux-user/syscall.c:8679:23: warning: jump through null pointer [-Wanalyzer-jump-through-null]
+    FALSE: ../linux-user/syscall.c:8693:19: warning: jump through null pointer [-Wanalyzer-jump-through-null]
+    FALSE: ../linux-user/syscall.c:1716:16: warning: jump through null pointer [-Wanalyzer-jump-through-null]
+      Happens when "fd" is bogus and thus fd_trans_target_to_host_addr returns NULL
+      But presumably "safe_read(arg1)" checks fd, and so this execution path can't happen.
+
+    FALSE: ../softmmu/vl.c:2999:40: warning: use of NULL ‘optarg’ where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+    FALSE: ../softmmu/vl.c:3006:21: warning: use of NULL ‘optarg’ where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+    FALSE: ../softmmu/vl.c:3124:21: warning: use of NULL ‘optarg’ where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+    FALSE: ../softmmu/vl.c:3143:21: warning: use of NULL ‘optarg’ where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+      A whole bunch of ones like this where "optarg" is NULL in 'qemu_init' due to lookup_opt being able to return NULL - but only when the popt with a name matching the argv string doesn't have HAS_ARG sent.  Presumably all of the ones consuming args have the flag set.
+      The array is:
+        static const QEMUOption qemu_options[] = {
+      so presumably we could *in theory* check that the flag is set.
+      Specifically, the popt returned from lookup_opt is const, so its flag was const.
+            popt = lookup_opt(argc, argv, &optarg, &optind);
+	    [..snip...]
+            switch(popt->index) {
+	    case value:
+	       [...code that assumes (popt->flags & HAS_ARG) in lookup_opt...]
 
   To be classified
   ================

@@ -30,6 +30,44 @@ coreutils-9.1
     FALSE: src/uptime.c:170:1: warning: leak of FILE 'fp' [CWE-775] [-Wanalyzer-file-leak]
     FALSE: src/mv.c:213:10: warning: check of 'dir_to_remove' for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
 
+    FALSE: src/digest.c:1508:15: warning: use of uninitialized value 'length' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      Considers the early return of false from "digest_file" here:
+          error (0, errno, "%s", quotef (filename));
+          return false;
+      but then executes the usage of length in DIGEST_OUT:
+          if (! digest_file (file, &binary_file, bin_buffer, &missing, &length))
+            ok = false;
+          else
+            {
+              DIGEST_OUT (file, binary_file, bin_buffer, prefix_tag,
+                          digest_delim, optind != argc, length);
+            }
+      as if digest_file returned true.
+
+    FALSE: src/chcon.c:198:7: warning: use of uninitialized value 'context' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+       Within change_file_context:
+       "context" created here on stack:
+           context_t context IF_LINT (= 0);
+       Used here:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  if (specified_context == NULL)
+    {
+      context_free (context);
+      freecon (file_context);
+    }
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       and there's a connection between specified_context and context:
+         context is presumably initialized when specified_context is NULL here:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+      if (compute_context_from_mask (file_context, &context))
+        return 1;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       compute_context_from_mask writes to *second_arg iff it returns 0
+       So we should be smarter about knowing this; issue with feasibility checking?
+       Or an issue with variables getting clobbered?
+
+
+
   Known false positives that aren't to be fixed at the GCC side
   =============================================================
     FALSE: src/pwd.c:137:3: warning: heap-based buffer underwrite [CWE-124] [-Wanalyzer-out-of-bounds]
@@ -52,3 +90,23 @@ coreutils-9.1
     TODO: [-Wanalyzer-null-argument]
     TODO: [-Wanalyzer-null-dereference]
     TODO: [-Wanalyzer-use-of-uninitialized-value]
+
+    TODO: src/copy.c:2603:19: warning: use of uninitialized value 'src_mode' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+       Used here in copy_internal:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  dst_mode_bits = (x->set_mode ? x->mode : src_mode) & CHMOD_MODE_BITS;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       Set here:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  if (rename_errno == 0
+      ? !x->last_file
+      : rename_errno != EEXIST || x->interactive != I_ALWAYS_NO)
+    {
+      [...snip...]
+      src_mode = src_sb.st_mode;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Unclear, though it is marked with:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+  mode_t src_mode IF_LINT ( = 0);
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    TODO: src/copy.c:2616:9: warning: use of uninitialized value 'src_mode' [CWE-457] [-Wanalyzer-use-of-uninitialized-value]

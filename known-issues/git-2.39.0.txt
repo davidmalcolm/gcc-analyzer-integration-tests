@@ -19,6 +19,17 @@ git-2.39.0
 
     FALSE: builtin/show-ref.c:194:20: warning: check of ‘argv’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
 
+    FALSE: wrapper.c:483:56: warning: use of uninitialized value ‘v’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+    FALSE: wrapper.c:484:27: warning: use of uninitialized value ‘v’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+		uint64_t v;
+		if (csprng_bytes(&v, sizeof(v)) < 0)
+			return error_errno("unable to get random bytes for temporary file");
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       Doesn't seem to grok that "read" with error-checking does populate the buffer
+
+    FALSE: archive-tar.c:512:9: warning: double ‘close’ of file descriptor ‘1’ [CWE-1341] [-Wanalyzer-fd-double-close]
+      * seems to be false, in that there's a dup2 call between the two 'close' calls
 
   Genuine -Wanalyzer-deref-before-check issues:
     TRUE: reftable/block.c:446:12: warning: check of ‘blockp’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
@@ -29,7 +40,6 @@ git-2.39.0
   To be classified
   ================
     TODO: archive-tar.c:506:13: warning: ‘dup2’ on possibly invalid file descriptor ‘1’ [-Wanalyzer-fd-use-without-check]
-    TODO: archive-tar.c:512:9: warning: double ‘close’ of file descriptor ‘1’ [CWE-1341] [-Wanalyzer-fd-double-close]
     TODO: [-Wanalyzer-deref-before-check]
     TODO: [-Wanalyzer-use-of-uninitialized-value]
     TODO: [-Wanalyzer-null-argument]

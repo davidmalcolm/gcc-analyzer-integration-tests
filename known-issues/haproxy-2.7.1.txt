@@ -6,6 +6,14 @@ haproxy-2.7.1
 
     TRUE: src/cfgparse-ssl.c:1033:17: warning: dereference of possibly-NULL ‘p1’ [CWE-690] [-Wanalyzer-possible-null-dereference]
     TRUE: src/flt_http_comp.c:693:17: warning: dereference of possibly-NULL ‘comp’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+    TRUE: src/tools.c:4283:17: warning: dereference of possibly-NULL ‘p’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+    TRUE: src/tools.c:4292:9: warning: dereference of possibly-NULL ‘p’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+    TRUE: src/backend.c:2813:51: warning: use of possibly-NULL ‘*curproxy.lbprm.arg_str’ where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+    TRUE: src/tools.c:4428:25: warning: use of NULL where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+      realloc failure (returning NULL) -> my_realloc2 returns NULL as "out", used by:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+			memcpy(out + out_len, txt_beg, txt_end - txt_beg);
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   False positives already in GCC bugzilla
   =======================================
@@ -41,6 +49,15 @@ haproxy-2.7.1
     FALSE: src/cache.c:1729:20: warning: check of ‘etag_buffer’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
     FALSE: src/cfgparse.c:482:29: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
     FALSE: src/cfgparse.c:491:20: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
+    FALSE: include/haproxy/chunk.h:273:13: warning: dereference of possibly-NULL ‘dst’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+/home/david/coding-3/gcc-build/test/experiment/x86_64-pc-linux-gnu/integration-tests/haproxy-2.7.1/haproxy-2.7.1/src/ssl_ckch.c:767:24: (54) this call could return NULL
+/home/david/coding-3/gcc-build/test/experiment/x86_64-pc-linux-gnu/integration-tests/haproxy-2.7.1/haproxy-2.7.1/src/ssl_ckch.c:768:22: (55) calling ‘chunk_dup’ from ‘ssl_sock_copy_cert_key_and_chain’
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      but there's a guard on dst being NULL immediately above.
+
+      FALSE: src/extcheck.c:243:17: warning: leak of ‘malloc((long unsigned int)(len + 1))’ [CWE-401] [-Wanalyzer-malloc-leak]
 
   To be classified
   ================
@@ -79,15 +96,17 @@ static inline struct server *objt_server(enum obj_type *t)
     TODO: src/ssl_crtlist.c:208:14: warning: heap-based buffer under-read [CWE-127] [-Wanalyzer-out-of-bounds]
       out-of-bounds read from byte -16 till byte -9 but region starts at byte 0
       Is it getting confused about an intrusive linked list?
-      
+
+    TODO: src/backend.c:351:29: warning: use of NULL ‘params’ where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+      where I think it's considering (in get_server_ph_post):
+	len = 0;
+
     TODO: [-Wanalyzer-deref-before-check]
     TODO: [-Wanalyzer-double-free]
     TODO: [-Wanalyzer-malloc-leak]
     TODO: [-Wanalyzer-null-argument]
     TODO: [-Wanalyzer-null-dereference]
     TODO: [-Wanalyzer-out-of-bounds]
-    TODO: [-Wanalyzer-possible-null-argument]
-    TODO: [-Wanalyzer-possible-null-dereference]
     TODO: [-Wanalyzer-use-after-free]
     TODO: [-Wanalyzer-use-of-uninitialized-value]
     TODO: src/ev_select.c:264:13: warning: allocated buffer size is not a multiple of the pointee's size [CWE-131] [-Wanalyzer-allocation-size]

@@ -40,3 +40,5 @@ xz-5.4.0
 	    [...snip...]
             iter->stream.number = stream->number;
 	  Probably need to make use of the assertions here.
+
+      FALSE: util.c:243:25: warning: missing call to ‘va_end’ [-Wanalyzer-va-list-leak]
