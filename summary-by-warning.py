@@ -100,6 +100,7 @@ class SummaryConfig:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('--rule-id', type=str, required=False)
     parser.add_argument('path', type=Path)
     parser.add_argument('--projects', required=False, nargs="+", metavar='PROJNAME',
                         help="If provided, restrict to just the named project(s)")
@@ -118,7 +119,7 @@ def main():
 
     summary = Summary(config,
                       verbose=args.verbose,
-                      filter_rule=None)#filter_rule)
+                      filter_rule=filter_rule)
 
     for proj in projects:
         proj_build = ProjectBuild(proj, Path(config.run_dir, proj.name))
