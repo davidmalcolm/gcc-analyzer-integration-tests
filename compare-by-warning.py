@@ -246,6 +246,14 @@ class Comparison(GroupedStats):
         self.classifier = classifier
         self.verbose = verbose
         self.filter_rule = filter_rule
+        self.new_sarif_files = set()
+        self.removed_sarif_files = set()
+
+    def on_new_sarif_file(self, proj, rel_sarif_path):
+        self.new_sarif_files.add((proj.name, rel_sarif_path))
+
+    def on_removed_sarif_file(self, proj, rel_sarif_path):
+        self.removed_sarif_files.add((proj.name, rel_sarif_path))
 
     def make_group(self, rule_id):
         return PerRuleStats(rule_id)
@@ -339,12 +347,20 @@ def main():
         all_sarif_paths |= before_sarif_paths
         all_sarif_paths |= after_sarif_paths
         for rel_sarif_path in sorted(all_sarif_paths):
-            if rel_sarif_path not in after_sarif_paths:
-                continue # TODO: sarif file went away
-            if rel_sarif_path not in before_sarif_paths:
-                continue # TODO: new sarif file appeared
-            before_results, before_result_dict = before.get_comparable_results(rel_sarif_path)
-            after_results, after_result_dict = after.get_comparable_results(rel_sarif_path)
+            if rel_sarif_path in before_sarif_paths:
+                before_results, before_result_dict = before.get_comparable_results(rel_sarif_path)
+            else:
+                # A new sarif file appeared
+                before_results, before_result_dict = set(), dict()
+                comparison.on_new_sarif_file(proj, rel_sarif_path)
+
+            if rel_sarif_path in after_sarif_paths:
+                after_results, after_result_dict = after.get_comparable_results(rel_sarif_path)
+            else:
+                # An existing sarif file went away
+                after_results, after_result_dict = set(), dict()
+                comparison.on_removed_sarif_file(proj, rel_sarif_path)
+
             all_results = set()
             all_results |= before_results
             all_results |= after_results
@@ -366,6 +382,15 @@ def main():
                                                    after.get_path(rel_sarif_path),
                                                    old_result, new_result)
     comparison.print_item(0)
+
+    if comparison.new_sarif_files:
+        print(f'New .sarif files: {len(comparison.new_sarif_files)}')
+        for proj_name, rel_sarif_path in sorted(comparison.new_sarif_files):
+            print(f'  {proj_name}: {rel_sarif_path}')
+    if comparison.removed_sarif_files:
+        print(f'Removed .sarif files: {len(comparison.removed_sarif_files)}')
+        for proj_name, rel_sarif_path in sorted(comparison.removed_sarif_files):
+            print(f'  {proj_name}: {rel_sarif_path}')
 
 if __name__ == '__main__':
     main()
