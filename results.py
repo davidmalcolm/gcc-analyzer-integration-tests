@@ -41,7 +41,8 @@ GOOD_KINDS = {'TRUE',  # a true positive
 BAD_KINDS = {'GCCBZ', # a false positive that has an associated report in GCC's bugzilla
              'FALSE', # a false positive that isn't in GCC's bugzilla
              'UNKNOWN', # a diagnostic we don't know how to classify
-             'TODO'} # a diagnostic that we've seen but haven't yet classified further
+             'TODO', # a diagnostic that we've seen but haven't yet classified further
+             'FAILURE' } # a crash of the analyzer
 
 class Ratings:
     """
@@ -213,11 +214,12 @@ def get_comparable_result(result, base_src_path):
 def get_comparable_results(base_sarif_path, rel_sarif_path):
     """
     Load a .sarif file found at rel_sarif_path below base_sarif_path.
-    Return a (set, dict) pair where:
+    Return a (set, dict, failures) triple where:
     - the set is a set of strings containing stringified versions
     of the results (with the paths expressed as they were in the sarif file,
     to help comparisons)
     - the dict is a mapping from the above strings to sarif result objects
+    - failures is a set of failures (if any)
     """
     str_results = []
     d = {}
@@ -228,7 +230,27 @@ def get_comparable_results(base_sarif_path, rel_sarif_path):
         s = get_comparable_result(result, '')
         str_results.append(s)
         d[s] = result
-    return set(str_results), d
+
+    failures = set()
+    run_data = sarif_file.runs[0].run_data
+    invocations = run_data.get('invocations', None)
+    if invocations:
+        for invocation in invocations:
+            for notification in invocation['toolExecutionNotifications']:
+                if notification['level'] == 'error':
+                    with io.StringIO() as f:
+                        dumper = GccStyleDumper(f, '')
+                        dumper.dump_sarif_notification(notification)
+                        v = f.getvalue()
+                        failures.add(f.getvalue())
+    return set(str_results), d, failures
+
+def get_path_length(result):
+    if 'codeFlows' not in result:
+        return None
+    code_flow = result['codeFlows'][0]
+    thread_flow = code_flow['threadFlows'][0]
+    return len(thread_flow['locations'])
 
 class ProjectBuild:
     """

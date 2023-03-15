@@ -299,6 +299,34 @@ class Comparison(GroupedStats):
         self.rating_changes.on_event(event, kind)
         self.add(ruleId, kind, proj, event)
 
+    def on_new_failure(self, proj, sarif_path, failure):
+        if self.verbose:
+            self.report_failure('new failure:', proj, sarif_path, failure)
+        self.add_failure_stat('ADDED', proj, sarif_path, failure)
+
+    def on_removed_failure(self, proj, sarif_path, failure):
+        if self.verbose:
+            self.report_failure('failure went away:', proj, sarif_path, failure)
+        self.add_failure_stat('REMOVED', proj, sarif_path, failure)
+
+    def on_unchanged_failure(self, proj, sarif_path, failure):
+        if self.verbose:
+            self.report_failure('unchanged failure:', proj, sarif_path, failure)
+        self.add_failure_stat('UNCHANGED', proj, sarif_path, failure)
+
+    def report_failure(self, title, proj, sarif_path, failure):
+        heading = title.upper()
+        heading += f' {proj.name}: {sarif_path}:'
+        print('-' * 76)
+        print(heading)
+        print('-' * 76)
+        print(failure)
+
+    def add_failure_stat(self, event, proj, sarif_path, failure):
+        kind = 'FAILURE'
+        self.rating_changes.on_event(event, kind)
+        self.add('failure', kind, proj, event)
+
 class ComparisonConfig:
     def __init__(self, abs_src_dir, projects, before_build_dir, after_build_dir):
         self.abs_src_dir = abs_src_dir
@@ -348,17 +376,19 @@ def main():
         all_sarif_paths |= after_sarif_paths
         for rel_sarif_path in sorted(all_sarif_paths):
             if rel_sarif_path in before_sarif_paths:
-                before_results, before_result_dict = before.get_comparable_results(rel_sarif_path)
+                before_results, before_result_dict, before_failures \
+                    = before.get_comparable_results(rel_sarif_path)
             else:
                 # A new sarif file appeared
-                before_results, before_result_dict = set(), dict()
+                before_results, before_result_dict, before_failures = set(), dict(), set()
                 comparison.on_new_sarif_file(proj, rel_sarif_path)
 
             if rel_sarif_path in after_sarif_paths:
-                after_results, after_result_dict = after.get_comparable_results(rel_sarif_path)
+                after_results, after_result_dict, after_failures \
+                    = after.get_comparable_results(rel_sarif_path)
             else:
                 # An existing sarif file went away
-                after_results, after_result_dict = set(), dict()
+                after_results, after_result_dict, after_failures = set(), dict(), set()
                 comparison.on_removed_sarif_file(proj, rel_sarif_path)
 
             all_results = set()
@@ -381,6 +411,24 @@ def main():
                     comparison.on_unchanged_result(proj,
                                                    after.get_path(rel_sarif_path),
                                                    old_result, new_result)
+
+            all_failures = set()
+            all_failures |= before_failures
+            all_failures |= after_failures
+            for failure in sorted(all_failures):
+                if failure not in before_failures:
+                    comparison.on_new_failure(proj,
+                                             after.get_path(rel_sarif_path),
+                                             failure)
+                elif failure not in after_failures:
+                    comparison.on_removed_failure(proj,
+                                                 before.get_path(rel_sarif_path),
+                                                 failure)
+                else:
+                    comparison.on_unchanged_failure(proj,
+                                                    after.get_path(rel_sarif_path),
+                                                    failure)
+
     comparison.print_item(0)
 
     if comparison.new_sarif_files:

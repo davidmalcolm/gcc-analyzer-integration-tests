@@ -44,6 +44,7 @@ class Summary:
         self.verbose = verbose
         self.filter_rule = filter_rule
         self.stats_by_rule_id = {}
+        self.num_failures = 0
 
     def on_result(self, proj, sarif_path, result):
         if self.filter_rule:
@@ -83,6 +84,21 @@ class Summary:
             print(f'{rule.rule_id}: {score * 100:2.2f}% (GOOD: {rule.good} BAD: {rule.bad})')
             for kind in sorted(rule.stats_by_kind):
                 print('%12s: %s' % (kind, rule.stats_by_kind[kind]))
+
+        if self.num_failures:
+            print(f'FAILURE: {self.num_failures}')
+
+    def on_failure(self, proj, sarif_path, failure):
+        if self.verbose:
+            self.report_failure(sarif_path, failure)
+        self.num_failures += 1
+
+    def report_failure(self, sarif_path, failure):
+        heading = '%s:' % 'FAILURE'
+        print('-' * 76)
+        print(heading)
+        print('-' * 76)
+        print(failure)
 
 class SummaryConfig:
     def __init__(self, abs_src_dir, projects, run_dir):
@@ -126,10 +142,12 @@ def main():
         sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
             #print(rel_sarif_path)
-            results, result_dict = proj_build.get_comparable_results(rel_sarif_path)
+            results, result_dict, failures = proj_build.get_comparable_results(rel_sarif_path)
             for str_result in sorted(results):
                 result = result_dict[str_result]
                 summary.on_result(proj, proj_build.get_path(rel_sarif_path), result)
+            for failure in sorted(failures):
+                summary.on_failure(proj, proj_build.get_path(rel_sarif_path), failure)
 
     summary.report_summary()
 
