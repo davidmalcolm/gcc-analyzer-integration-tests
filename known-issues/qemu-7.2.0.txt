@@ -117,6 +117,12 @@ In function 'g_autoptr_cleanup_generic_gfree':
 	    case value:
 	       [...code that assumes (popt->flags & HAS_ARG) in lookup_opt...]
 
+    FALSE: net/colo-compare.c:444:12: warning: check of ‘ppkt’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: net/colo-compare.c:453:16: warning: check of ‘ppkt’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    FALSE: net/colo-compare.c:459:12: warning: check of ‘ppkt’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
+    FALSE: util/qemu-sockets.c:936:8: warning: check of ‘pathbuf’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
   To be classified
   ================
     TODO: ../target/ppc/misc_helper.c:78:38: warning: shift by count (‘1024’) >= precision of type (‘64’) [-Wanalyzer-shift-count-overflow]
@@ -130,6 +136,3 @@ In function 'g_autoptr_cleanup_generic_gfree':
       In decUnitAddSub
 
     TODO: [-Wanalyzer-use-of-uninitialized-value]
-
-
-

@@ -1,0 +1,7 @@
+pcre2-10.42
+===========
+
+  False positives already in GCC bugzilla
+  =======================================
+    GCCBZ: pcre2test.c:8519:17: warning: use of uninitialized value
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109014

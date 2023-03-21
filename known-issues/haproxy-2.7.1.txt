@@ -15,6 +15,61 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 			memcpy(out + out_len, txt_beg, txt_end - txt_beg);
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    TRUE: src/hpack-tbl.c:354:24: warning: dereference of NULL ‘dht’ [CWE-476] [-Wanalyzer-null-dereference]
+      In hpack_dht_defrag:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+	/* Note: for small tables we could use alloca() instead but
+	 * portability especially for large tables can be problematic.
+	 */
+	alt_dht = hpack_dht_alloc();
+	if (!alt_dht)
+		return NULL;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       hpack_dht_alloc is implemented in include/haproxy/hpack-tbl.h as:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+/* allocate a dynamic headers table from the pool and return it initialized */
+static inline struct hpack_dht *hpack_dht_alloc()
+{
+	struct hpack_dht *dht;
+
+	if (unlikely(!pool_head_hpack_tbl))
+		return NULL;
+
+	dht = hpack_alloc(pool_head_hpack_tbl);
+	if (dht)
+		hpack_dht_init(dht, pool_head_hpack_tbl->size);
+	return dht;
+}
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       where hpack_alloc is:
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+#ifndef HPACK_STANDALONE
+#include <haproxy/pool.h>
+#define hpack_alloc(pool)      pool_alloc(pool)
+#define hpack_free(pool, ptr)  pool_free(pool, ptr)
+#else
+#include <stdlib.h>
+#include <haproxy/pool-t.h>
+#define hpack_alloc(pool)      malloc(pool->size)
+#define hpack_free(pool, ptr)  free(ptr)
+#endif
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       and looking at places where pool_alloc is called, there seems to be error checking
+       So am assuming this is a true positive.
+
+    TRUE: src/auth.c:150:41: warning: leak of ‘<unknown>’ [CWE-401] [-Wanalyzer-malloc-leak]
+    TRUE: src/auth.c:159:41: warning: leak of ‘<unknown>’ [CWE-401] [-Wanalyzer-malloc-leak]
+      Looks like groups is a singly-linked list, and it's only freeing the first node
+
+    TRUE: src/cfgparse.c:1409:33: warning: leak of ‘<unknown>’ [CWE-401] [-Wanalyzer-malloc-leak]
+      Looks like if "users" appears twice, the copy of the 2nd arg will clobber the (ptr to) copy of the 1st arg
+
+    TRUE: src/cfgparse.c:1479:33: warning: leak of ‘<unknown>’ [CWE-401] [-Wanalyzer-malloc-leak]
+      Looks like if "insecure-password" occurs twice it leaks the 1st strdup result
+
+    TRUE: src/cfgparse.c:1484:33: warning: leak of ‘<unknown>’ [CWE-401] [-Wanalyzer-malloc-leak]
+      Looks like if "groups" occurs twice it leaks the 1st strdup result
+
   False positives already in GCC bugzilla
   =======================================
 
@@ -38,6 +93,14 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
       Doesn't seem to recognize that when "read" returns the given size that the buffer is fully populated.
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108661
 
+    GCCBZ: src/cfgparse.c:4713:9: warning: leak of ‘cp’ [CWE-401] [-Wanalyzer-malloc-leak]
+      "In function 'cfg_register_postparser':"
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109059
+
+    GCCBZ: src/cfgparse.c:482:29: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+    GCCBZ: src/cfgparse.c:491:20: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109060
+
   False positives not yet in GCC bugzilla
   =======================================
 
@@ -47,8 +110,6 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
     FALSE: src/proto_uxst.c:262:19: warning: leak of file descriptor ‘socket(1, 1, 0)’ [CWE-775] [-Wanalyzer-fd-leak]
 
     FALSE: src/cache.c:1729:20: warning: check of ‘etag_buffer’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
-    FALSE: src/cfgparse.c:482:29: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
-    FALSE: src/cfgparse.c:491:20: warning: check of ‘dash’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
 
     FALSE: include/haproxy/chunk.h:273:13: warning: dereference of possibly-NULL ‘dst’ [CWE-690] [-Wanalyzer-possible-null-dereference]
 VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
@@ -57,7 +118,32 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       but there's a guard on dst being NULL immediately above.
 
-      FALSE: src/extcheck.c:243:17: warning: leak of ‘malloc((long unsigned int)(len + 1))’ [CWE-401] [-Wanalyzer-malloc-leak]
+  Former false positives that are believed to be fixed
+  ====================================================
+
+    FALSE: src/extcheck.c:243:17: warning: leak of ‘malloc((long unsigned int)(len + 1))’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/cfgparse-listen.c:1476:17: warning: leak of ‘calloc(1, 72)’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/debug.c:1041:12: warning: leak of ‘tctx’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/fcgi-app.c:754:9: warning: leak of ‘rule’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/flt_http_comp.c:798:16: warning: leak of ‘fconf’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/flt_spoe.c:3807:36: warning: leak of ‘vph’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/http_client.c:1370:47: warning: leak of ‘node’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/http_htx.c:2246:32: warning: leak of ‘new_conf_err’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/http_client.c:884:53: warning: leak of ‘calloc((long unsigned int)(hdr_num + 1), 32)’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/http_htx.c:2071:16: warning: leak of ‘conf_err’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:99:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:113:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:129:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:145:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:161:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:177:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:193:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:207:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:221:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:235:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/init.c:249:1: warning: leak of ‘b’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/log.c:1021:9: warning: leak of ‘logsrv’ [CWE-401] [-Wanalyzer-malloc-leak]
+    FALSE: src/tools.c:4643:9: warning: leak of ‘wl’ [CWE-401] [-Wanalyzer-malloc-leak]
 
   To be classified
   ================

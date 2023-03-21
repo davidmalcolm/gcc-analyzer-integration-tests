@@ -7,6 +7,9 @@ git-2.39.0
       the check is in a "cleanup:" section which can be reached from various places in supergraph; "data" might or might not be NULL
       https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108455
 
+    GCCBZ: builtin/show-ref.c:194:20: warning: check of ‘argv’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109131
+
   False positives not yet in GCC bugzilla
   =======================================
     FALSE: http-fetch.c:66:21: warning: use of uninitialized value ‘results.curl_result’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
@@ -16,8 +19,6 @@ git-2.39.0
     FALSE: builtin/archive.c:17:20: warning: leak of file descriptor ‘dup2(output_fd, 1)’ [CWE-775] [-Wanalyzer-fd-leak]
       It calls "die_errno" when failing, so the "leak" is uninteresting.
       Also, perhaps code is making an assumption about lowest-numbered unused file descriptor which analyzer doesn't know about
-
-    FALSE: builtin/show-ref.c:194:20: warning: check of ‘argv’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
 
     FALSE: wrapper.c:483:56: warning: use of uninitialized value ‘v’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
     FALSE: wrapper.c:484:27: warning: use of uninitialized value ‘v’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
@@ -40,7 +41,6 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
   To be classified
   ================
     TODO: archive-tar.c:506:13: warning: ‘dup2’ on possibly invalid file descriptor ‘1’ [-Wanalyzer-fd-use-without-check]
-    TODO: [-Wanalyzer-deref-before-check]
     TODO: [-Wanalyzer-use-of-uninitialized-value]
     TODO: [-Wanalyzer-null-argument]
     TODO: [-Wanalyzer-null-dereference]
