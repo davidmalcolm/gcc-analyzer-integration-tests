@@ -186,7 +186,7 @@ class TestProject:
         else:
             logging.error('ERR: expected file %s does not exist (%r)'
                           % (expected_file, path))
-            raise ValueError('missing file: %s' % expected_file)
+            raise ValueError('missing file: %s (not found within %s)' % (expected_file, path))
 
     def verify_sarif_files_exist(self, within_dir, expected_sarif_files):
         missing = []
@@ -474,20 +474,19 @@ class Kernel(TestProject):
                   proj_dir,
                   extra_args=['allnoconfig', 'all',
                               'CC=%s' % config.toolchain.c_compiler_path,
-                              'DEBUG_CFLAGS=-fanalyzer'])
-        # TODO: add -fdiagnostics-format=sarif-file to DEBUG_CFLAGS
-        #
-        # Currently this triggers an ICE due to
-        #  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108307
-        #
-        # Without this, we're merely verifying that the kernel builds with
-        # -fanalyzer with the compiler under test - we're not verifying
-        # anything about the analyzer output.
-        #
-        # TODO: we might also want a way to add 'V=1' to the "make" invocation
+                              'V=1',
+                              'DEBUG_CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file'])
 
     def verify(self, config, proj_dir):
-        self.verify_file_exists(proj_dir, 'vmlinux')
+        self.verify_file_exists(Path(proj_dir, self.name), 'vmlinux')
+
+        expected_sarif_files = ['char_dev.c.sarif',
+                                'filesystems.c.sarif',
+                                'kfifo.c.sarif',
+                                'printk.c.sarif',
+                                'syscall.c.sarif']
+        self.verify_sarif_files_exist(Path(proj_dir, self.name),
+                                      expected_sarif_files)
 
 class OpenSSL(TestProject):
     def __init__(self):

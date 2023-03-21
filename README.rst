@@ -48,8 +48,7 @@ See `test.py` for the full details
 * haproxy-2.7.1
 * ImageMagick-7.1.0-57
 * Juliet-1.3 (a test suite for static analysis tools)
-* linux-5.10.162 (with ``allnoconfig``; currently without gathering
-  SARIF files)
+* linux-5.10.162 (with ``allnoconfig``)
 * pcre2-10.42
 * qemu-7.2.0
 * xz-5.4.0
