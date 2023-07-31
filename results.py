@@ -54,18 +54,18 @@ class Ratings:
         self.bad = 0
         self.total = 0
 
-    def on_kind(self, kind):
+    def on_kind(self, kind, count = 1):
         if kind in self.stats_by_kind:
-            self.stats_by_kind[kind] += 1
+            self.stats_by_kind[kind] += count
         else:
-            self.stats_by_kind[kind] = 1
+            self.stats_by_kind[kind] = count
         if kind in GOOD_KINDS:
-            self.good += 1
+            self.good += count
         elif kind in BAD_KINDS:
-            self.bad += 1
+            self.bad += count
         else:
             raise ValueError('unknown kind: %s' % kind)
-        self.total += 1
+        self.total += count
 
     def get_score(self) -> float:
         if self.total > 0:
@@ -211,15 +211,93 @@ def get_comparable_result(result, base_src_path):
         dumper.dump_sarif_result(result)
         return f.getvalue()
 
+PROFILE_FIELDS = ['user', 'sys', 'wall', 'ggc_mem']
+
+class InvocationProfile:
+    def __init__(self, json_obj, rel_sarif_path):
+        #print(json_obj) # TODO
+        self.json_obj = json_obj
+        self.rel_sarif_path = rel_sarif_path
+        self.timevars = self.json_obj['timevars']
+        total = self.timevars[-1]
+        assert total['name'] == 'TOTAL'
+        self.total = total['elapsed']
+        self.analyzer_total = dict([(field, 0) for field in PROFILE_FIELDS])
+        for tv in self.timevars:
+            if tv['name'].startswith('analyzer'):
+                for field in PROFILE_FIELDS:
+                    self.analyzer_total[field] += tv['elapsed'][field]
+
+    def get_proportion(self, field) -> float:
+        """
+        Get the fraction of the total elapsed for FIELD taken up by
+        analyzer-related timevars.
+        """
+        if self.total[field] == 0:
+            return 0.0
+        else:
+            return float(self.analyzer_total[field]) / float(self.total[field])
+
+    def get_without_analysis(self) -> float:
+        """
+        Get number of user seconds that would have been spent if -fanalyzer
+        wasn't enabled.
+        """
+        total = float(self.total['user'])
+        analyzer = float(self.analyzer_total['user'])
+        return total - analyzer
+
+    def get_slowdown(self) -> float:
+        total = float(self.total['user'])
+        analyzer = float(self.analyzer_total['user'])
+        without_analyzer = total - analyzer
+        if without_analyzer != 0:
+            return total / without_analyzer
+        else:
+            return 0
+
+    def get_greatest_analyzer_item(self) -> (str, float):
+        name = None
+        amt = 0.0
+        for tv in self.timevars:
+            prefix = 'analyzer: '
+            if tv['name'].startswith(prefix):
+                if tv['elapsed']['user'] > amt:
+                    amt = float(tv['elapsed']['user'])
+                    name = tv['name'][len(prefix):]
+        return (name, amt)
+
+    def report(self) -> str:
+        """
+        Generate a string that emulates the output of GCC's -ftime-report.
+        """
+        result = f"{'Time variable':35}{'usr':>16}{'sys':>14}{'wall':>14}{'GGC':>16}\n"
+        for tv in self.timevars:
+            result += f"{tv['name']:35}:"
+            elapsed = tv['elapsed']
+            for field in PROFILE_FIELDS:
+                if self.total[field] == 0:
+                    percent = 0.0
+                else:
+                    percent = (float(elapsed[field]) / self.total[field]) * 100.0
+                if field == 'ggc_mem':
+                    result += f"{elapsed[field]:7} ({percent:3.0f}%)"
+                    # TODO: show size amount: scale and label
+                else:
+                    result += f"{float(elapsed[field]):7.2f} ({percent:3.0f}%)"
+            result += "\n"
+        return result
+
 def get_comparable_results(base_sarif_path, rel_sarif_path):
     """
     Load a .sarif file found at rel_sarif_path below base_sarif_path.
-    Return a (set, dict, failures) triple where:
+    Return a (set, dict, failures, profiles) 4-tuple where:
     - the set is a set of strings containing stringified versions
     of the results (with the paths expressed as they were in the sarif file,
     to help comparisons)
     - the dict is a mapping from the above strings to sarif result objects
     - failures is a set of failures (if any)
+    - profiles is a list of InvocationProfile objects
     """
     str_results = []
     d = {}
@@ -234,6 +312,7 @@ def get_comparable_results(base_sarif_path, rel_sarif_path):
     failures = set()
     run_data = sarif_file.runs[0].run_data
     invocations = run_data.get('invocations', None)
+    profiles = []
     if invocations:
         for invocation in invocations:
             for notification in invocation['toolExecutionNotifications']:
@@ -243,7 +322,12 @@ def get_comparable_results(base_sarif_path, rel_sarif_path):
                         dumper.dump_sarif_notification(notification)
                         v = f.getvalue()
                         failures.add(f.getvalue())
-    return set(str_results), d, failures
+            properties = invocation.get('properties', None)
+            if properties:
+                time_report = properties.get('gcc/timeReport', None)
+                if time_report:
+                    profiles.append(InvocationProfile(time_report, rel_sarif_path))
+    return set(str_results), d, failures, profiles
 
 def get_path_length(result):
     if 'codeFlows' not in result:
@@ -270,11 +354,13 @@ class ProjectBuild:
     def get_comparable_results(self, rel_sarif_path):
         """
         Load a .sarif file found at rel_sarif_path below self.proj_build_dir.
-        Return a (set, dict) pair where:
+        Return a (set, dict, failures, profiles) 4-tuple where:
         - the set is a set of strings containing stringified versions
         of the results (with the paths expressed as they were in the sarif file,
         to help comparisons)
         - the dict is a mapping from the above strings to sarif result objects
+        - failures is a set of failures (if any)
+        - profiles is a list of InvocationProfile objects
         """
         return get_comparable_results(self.proj_build_dir, rel_sarif_path)
 

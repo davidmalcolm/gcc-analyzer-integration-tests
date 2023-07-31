@@ -376,7 +376,7 @@ def main():
         all_sarif_paths |= after_sarif_paths
         for rel_sarif_path in sorted(all_sarif_paths):
             if rel_sarif_path in before_sarif_paths:
-                before_results, before_result_dict, before_failures \
+                before_results, before_result_dict, before_failures, before_profiles \
                     = before.get_comparable_results(rel_sarif_path)
             else:
                 # A new sarif file appeared
@@ -384,7 +384,7 @@ def main():
                 comparison.on_new_sarif_file(proj, rel_sarif_path)
 
             if rel_sarif_path in after_sarif_paths:
-                after_results, after_result_dict, after_failures \
+                after_results, after_result_dict, after_failures, after_profiles \
                     = after.get_comparable_results(rel_sarif_path)
             else:
                 # An existing sarif file went away

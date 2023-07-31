@@ -123,7 +123,7 @@ def main():
                     ruleId = result.get('ruleId', '')
                     if ruleId != args.rule_id:
                         continue
-                kind = config.classify(proj, rel_sarif_path, result)
+                kind = config.classify(proj, proj_build.get_path(rel_sarif_path), result)
                 if args.kind:
                     if kind != args.kind:
                         continue

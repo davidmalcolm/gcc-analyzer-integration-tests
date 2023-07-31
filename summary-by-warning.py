@@ -19,6 +19,7 @@
 
 import argparse
 from functools import cmp_to_key
+import heapq
 import locale
 from pathlib import Path
 import sys
@@ -45,6 +46,7 @@ class Summary:
         self.filter_rule = filter_rule
         self.stats_by_rule_id = {}
         self.num_failures = 0
+        self.profiles = []
 
     def on_result(self, proj, sarif_path, result):
         if self.filter_rule:
@@ -88,6 +90,23 @@ class Summary:
         if self.num_failures:
             print(f'FAILURE: {self.num_failures}')
 
+        N = 50
+        print(f'{N} slowest analyses:')
+        for user, rel_sarif_path, profile in heapq.nlargest(N,
+                                                            [(profile.analyzer_total['user'], profile.rel_sarif_path, profile)
+                                                             for profile in self.profiles]):
+            sys.stdout.write(f'  {rel_sarif_path}:')
+            sys.stdout.write(f' {user:.2f}s')
+            if user > 60:
+                sys.stdout.write(f' ({user/60:.2f}m)')
+            sys.stdout.write(f' out of {profile.total["user"]:.2f}s')
+            sys.stdout.write(f' ({profile.get_proportion("user") * 100.0:2.2f}%')
+            sys.stdout.write(f'; slowdown = {profile.get_slowdown():.2f})\n')
+            without_analysis = profile.get_without_analysis()
+            print(f'    without -fanalyzer would be: {without_analysis:.2f}s')
+            name, amt = profile.get_greatest_analyzer_item()
+            print(f'    {name}: {amt:.2f}s')
+
     def on_failure(self, proj, sarif_path, failure):
         if self.verbose:
             self.report_failure(sarif_path, failure)
@@ -99,6 +118,15 @@ class Summary:
         print(heading)
         print('-' * 76)
         print(failure)
+
+    def on_profile(self, proj, sarif_path, profile):
+        self.profiles.append(profile)
+        # TODO: gather some stats as we go?
+        #print(profile.json_obj)
+        #print(profile.report())
+        #print(profile.analyzer_total)
+        #print(profile.total)
+        #print(f'usr: {profile.get_proportion("user") * 100.0:2.2f}%')
 
 class SummaryConfig:
     def __init__(self, abs_src_dir, projects, run_dir):
@@ -141,13 +169,15 @@ def main():
         proj_build = ProjectBuild(proj, Path(config.run_dir, proj.name))
         sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
-            #print(rel_sarif_path)
-            results, result_dict, failures = proj_build.get_comparable_results(rel_sarif_path)
+            results, result_dict, failures, profiles = \
+                proj_build.get_comparable_results(rel_sarif_path)
             for str_result in sorted(results):
                 result = result_dict[str_result]
                 summary.on_result(proj, proj_build.get_path(rel_sarif_path), result)
             for failure in sorted(failures):
                 summary.on_failure(proj, proj_build.get_path(rel_sarif_path), failure)
+            for profile in profiles:
+                summary.on_profile(proj, proj_build.get_path(rel_sarif_path), profile)
 
     summary.report_summary()
 
