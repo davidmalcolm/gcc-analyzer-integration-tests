@@ -26,6 +26,8 @@ Goals
   styles, by different teams, using each upstream's default choice of
   compilation flags.
 
+* all projects should be FLOSS (as should the test harness itself)
+
 
 Non-goals
 *********
@@ -39,7 +41,7 @@ Non-goals
 Current projects tested
 =======================
 
-See `test.py` for the full details
+See `projects.py` for the full details
 
 * apr-1.7.0
 * coreutils-9.1
@@ -63,6 +65,9 @@ TODO
 $ sudo pip install sarif-tools
 
 TODO: is this in Fedora yet?
+
+Needs a copy of https://github.com/davidmalcolm/sarif-dump checked out to
+a sister directory for now.
 
 
 Usage
