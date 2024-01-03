@@ -18,10 +18,12 @@
 
 import io
 from pathlib import Path
+from pprint import pprint
+import json
 import re
 import sys
 
-import sarif.loader
+from sarif.sarif_file import SarifFile
 
 # FIXME:
 sys.path.append('../sarif-dump')
@@ -301,18 +303,25 @@ def get_comparable_results(base_sarif_path, rel_sarif_path):
     """
     str_results = []
     d = {}
+    failures = set()
+    profiles = []
+
     sarif_path = Path(base_sarif_path, rel_sarif_path)
     #base_src_path = sarif_path.parent
-    sarif_file = sarif.loader.load_sarif_file(sarif_path)
+    try:
+        with open(sarif_path, encoding="utf-8") as file_in:
+            data = json.load(file_in)
+        sarif_file =  SarifFile(sarif_path, data)
+    except json.decoder.JSONDecodeError as err:
+        failures.add('json.decoder.JSONDecodeError: %s' % err)
+        return set(str_results), d, failures, profiles
     for result in sarif_file.get_results():
         s = get_comparable_result(result, '')
         str_results.append(s)
         d[s] = result
 
-    failures = set()
     run_data = sarif_file.runs[0].run_data
     invocations = run_data.get('invocations', None)
-    profiles = []
     if invocations:
         for invocation in invocations:
             for notification in invocation['toolExecutionNotifications']:
