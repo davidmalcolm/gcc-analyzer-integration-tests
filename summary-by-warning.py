@@ -29,7 +29,8 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_comparable_result, ProjectBuild, Ratings
+from results import get_classifier, get_comparable_result, ProjectBuild, \
+    Ratings, get_sarif_schema
 
 class Rule(Ratings):
     """
@@ -153,6 +154,7 @@ def main():
 
     abs_src_dir = Path(sys.argv[0]).parent.absolute()
     config = SummaryConfig(abs_src_dir, projects, args.path)
+    sarif_schema = get_sarif_schema ()
 
     def filter_rule(result):
         if args.rule_id:
@@ -170,7 +172,7 @@ def main():
         sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
             results, result_dict, failures, profiles = \
-                proj_build.get_comparable_results(rel_sarif_path)
+                proj_build.get_comparable_results(rel_sarif_path, sarif_schema)
             for str_result in sorted(results):
                 result = result_dict[str_result]
                 summary.on_result(proj, proj_build.get_path(rel_sarif_path), result)

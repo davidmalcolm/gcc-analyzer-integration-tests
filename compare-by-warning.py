@@ -26,7 +26,8 @@ sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
 from projects import get_projects
-from results import get_classifier, get_comparable_result, ProjectBuild, Ratings
+from results import get_classifier, get_comparable_result, ProjectBuild, \
+    Ratings, get_sarif_schema
 
 DEBUG=0
 
@@ -354,6 +355,7 @@ def main():
 
     abs_src_dir = Path(sys.argv[0]).parent.absolute()
     config = ComparisonConfig(abs_src_dir, projects, args.before, args.after)
+    sarif_schema = get_sarif_schema ()
 
     def filter_rule(result):
         if args.rule_id:
@@ -377,7 +379,7 @@ def main():
         for rel_sarif_path in sorted(all_sarif_paths):
             if rel_sarif_path in before_sarif_paths:
                 before_results, before_result_dict, before_failures, before_profiles \
-                    = before.get_comparable_results(rel_sarif_path)
+                    = before.get_comparable_results(rel_sarif_path, sarif_schema)
             else:
                 # A new sarif file appeared
                 before_results, before_result_dict, before_failures = set(), dict(), set()
@@ -385,7 +387,7 @@ def main():
 
             if rel_sarif_path in after_sarif_paths:
                 after_results, after_result_dict, after_failures, after_profiles \
-                    = after.get_comparable_results(rel_sarif_path)
+                    = after.get_comparable_results(rel_sarif_path, sarif_schema)
             else:
                 # An existing sarif file went away
                 after_results, after_result_dict, after_failures = set(), dict(), set()

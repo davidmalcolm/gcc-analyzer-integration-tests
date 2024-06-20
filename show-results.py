@@ -29,7 +29,7 @@ from sarifdump import GccStyleDumper
 
 from projects import get_projects
 from results import get_classifier, get_comparable_result, ProjectBuild, \
-    GOOD_KINDS, BAD_KINDS
+    GOOD_KINDS, BAD_KINDS, get_sarif_schema
 
 class Summary:
     def __init__(self, config, verbose, filter_rule):
@@ -104,6 +104,7 @@ def main():
 
     abs_src_dir = Path(sys.argv[0]).parent.absolute()
     config = SummaryConfig(abs_src_dir, projects, args.path)
+    sarif_schema = get_sarif_schema ()
 
     def filter_rule(result):
         if args.rule_id:
@@ -116,7 +117,7 @@ def main():
         proj_build = ProjectBuild(proj, Path(config.run_dir, proj.name))
         sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
-            results, result_dict, failures, profiles = proj_build.get_comparable_results(rel_sarif_path)
+            results, result_dict, failures, profiles = proj_build.get_comparable_results(rel_sarif_path, sarif_schema)
             for str_result in sorted(results):
                 result = result_dict[str_result]
                 if args.rule_id:

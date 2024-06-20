@@ -25,7 +25,8 @@ import sys
 sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
-from results import get_classifier, get_sarif_paths, get_comparable_result, get_comparable_results
+from results import get_classifier, get_sarif_paths, get_comparable_result, \
+    get_comparable_results, get_sarif_schema
 
 class Comparison:
     def __init__(self, classifier, verbose, filter_rule):
@@ -90,6 +91,7 @@ def main():
     parser.add_argument('before', type=Path)
     parser.add_argument('after', type=Path)
     args = parser.parse_args()
+    sarif_schema = get_sarif_schema ()
     classifier = get_classifier(args.classification_file)
 
     before_sarif_paths = get_sarif_paths(args.before)
@@ -114,8 +116,8 @@ def main():
             continue # TODO: sarif file went away
         if rel_sarif_path not in before_sarif_paths:
             continue # TODO: new sarif file appeared
-        before_results, before_result_dict = get_comparable_results(args.before, rel_sarif_path)
-        after_results, after_result_dict = get_comparable_results(args.after, rel_sarif_path)
+        before_results, before_result_dict = get_comparable_results(args.before, rel_sarif_path, sarif_schema)
+        after_results, after_result_dict = get_comparable_results(args.after, rel_sarif_path, sarif_schema)
         all_results = set()
         all_results |= before_results
         all_results |= after_results

@@ -25,7 +25,8 @@ import sys
 sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
 
-from results import get_classifier, get_sarif_paths, get_comparable_result, get_comparable_results
+from results import get_classifier, get_sarif_paths, get_comparable_result, \
+    get_comparable_results, get_sarif_schema
 
 class Summary:
     def __init__(self, classifier, verbose, filter_rule):
@@ -73,6 +74,7 @@ def main():
     parser.add_argument('path', type=Path)
     args = parser.parse_args()
     classifier = get_classifier(args.classification_file)
+    sarif_schema = get_sarif_schema ()
 
     sarif_paths = get_sarif_paths(args.path)
 
@@ -88,7 +90,7 @@ def main():
                       filter_rule=filter_rule)
 
     for rel_sarif_path in sorted(sarif_paths):
-        results, result_dict = get_comparable_results(args.path, rel_sarif_path)
+        results, result_dict = get_comparable_results(args.path, rel_sarif_path, sarif_schema)
         for str_result in sorted(results):
             result = result_dict[str_result]
             summary.on_result(Path(args.path, rel_sarif_path), result)

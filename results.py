@@ -23,11 +23,20 @@ import json
 import re
 import sys
 
+import jsonschema
 from sarif.sarif_file import SarifFile
 
 # FIXME:
 sys.path.append('../sarif-dump')
 from sarifdump import GccStyleDumper
+
+############################################################################
+
+def get_sarif_schema ():
+    sarif_schema_path = 'sarif-schema-2.1.0.json'
+    with Path(sarif_schema_path).open() as f:
+        sarif_schema = json.load(f)
+    return sarif_schema
 
 ############################################################################
 
@@ -290,7 +299,7 @@ class InvocationProfile:
             result += "\n"
         return result
 
-def get_comparable_results(base_sarif_path, rel_sarif_path):
+def get_comparable_results(base_sarif_path, rel_sarif_path, sarif_schema):
     """
     Load a .sarif file found at rel_sarif_path below base_sarif_path.
     Return a (set, dict, failures, profiles) 4-tuple where:
@@ -314,6 +323,12 @@ def get_comparable_results(base_sarif_path, rel_sarif_path):
         sarif_file =  SarifFile(sarif_path, data)
     except json.decoder.JSONDecodeError as err:
         failures.add('json.decoder.JSONDecodeError: %s' % err)
+        return set(str_results), d, failures, profiles
+    try:
+        jsonschema.validate(data, sarif_schema)
+    except jsonschema.exceptions.ValidationError as err:
+        failures.add('jsonschema.exceptions.ValidationError: %s'
+                     % str(err).splitlines()[0])
         return set(str_results), d, failures, profiles
     for result in sarif_file.get_results():
         s = get_comparable_result(result, '')
@@ -360,7 +375,7 @@ class ProjectBuild:
         """
         return get_sarif_paths(self.proj_build_dir)
 
-    def get_comparable_results(self, rel_sarif_path):
+    def get_comparable_results(self, rel_sarif_path, sarif_schema):
         """
         Load a .sarif file found at rel_sarif_path below self.proj_build_dir.
         Return a (set, dict, failures, profiles) 4-tuple where:
@@ -371,7 +386,7 @@ class ProjectBuild:
         - failures is a set of failures (if any)
         - profiles is a list of InvocationProfile objects
         """
-        return get_comparable_results(self.proj_build_dir, rel_sarif_path)
+        return get_comparable_results(self.proj_build_dir, rel_sarif_path, sarif_schema)
 
     def get_path(self, rel_path):
         """
