@@ -116,7 +116,7 @@ def main():
         proj_build = ProjectBuild(proj, Path(config.run_dir, proj.name))
         sarif_paths = proj_build.get_rel_sarif_paths()
         for rel_sarif_path in sorted(sarif_paths):
-            results, result_dict = proj_build.get_comparable_results(rel_sarif_path)
+            results, result_dict, failures, profiles = proj_build.get_comparable_results(rel_sarif_path)
             for str_result in sorted(results):
                 result = result_dict[str_result]
                 if args.rule_id:
