@@ -127,13 +127,15 @@ def fixup_file(path, old_text, new_text):
 
 ############################################################################
 
+CFLAGS_TO_INJECT = "-fanalyzer -fdiagnostics-format=sarif-file -ftime-report -std=gnu17"
+
 class TestProject:
     """
     Base class for projects.
     Responsibilities include:
     - how to build whilst:
       - using a custom toolchain
-      - injecting "-fanalyzer -fdiagnostics-format=sarif-file -ftime-report" into flags
+      - injecting CFLAGS_TO_INJECT into flags
     """
     def __init__(self, name):
         self.name = name
@@ -146,7 +148,7 @@ class TestProject:
         logging.info('Configuring %s', self.name)
         args = ['./configure',
                 'CC=%s' % toolchain.c_compiler_path,
-                'CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file -ftime-report']
+                f'CFLAGS={FLAGS_TO_INJECT}']
         if extra_args:
             args += extra_args
         subprocess.run(args,
@@ -158,7 +160,7 @@ class TestProject:
         logging.info('Configuring %s', self.name)
         subprocess.run(['./configure',
                         '--cc=%s' % toolchain.c_compiler_path,
-                        '--extra-cflags=-fanalyzer -fdiagnostics-format=sarif-file -ftime-report'],
+                        f'--extra-cflags={CFLAGS_TO_INJECT}'],
                        cwd=Path(proj_dir, self.name),
                        check=True)
         logging.info('Finished configuring %s', self.name)
@@ -271,7 +273,7 @@ class Doom(TestProject):
         CFLAGS += ' -Wno-pointer-to-int-cast'
 
         # Inject analyzer and SARIF output:
-        CFLAGS += ' -fanalyzer -fdiagnostics-format=sarif-file -ftime-report'
+        CFLAGS += f' {CFLAGS_TO_INJECT}'
 
         args = ['make', config.get_make_jobs_arg(),
                 'CC=%s' % config.toolchain.c_compiler_path,
@@ -344,7 +346,7 @@ class HAProxy(TestProject):
                   extra_args=['TARGET=linux-glibc',
                               'USE_OPENSSL=1',
                               'CC=%s' % config.toolchain.c_compiler_path,
-                              'DEBUG_CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file -ftime-report'],
+                              f'DEBUG_CFLAGS={CFLAGS_TO_INJECT}'],
                   # TODO: get it to succeed:
                   check=False)
 
@@ -410,7 +412,7 @@ class Juliet(TestProject):
         #CFLAGS += ' -c'
 
         # Inject analyzer and SARIF output:
-        CFLAGS += ' -fanalyzer -fdiagnostics-format=sarif-file -ftime-report'
+        CFLAGS += f' {CFLAGS_TO_INJECT}'
 
         CC_from_makefile = self.get_make_var(config, 'CC', test_case_dir)
         if CC_from_makefile == 'gcc':
@@ -478,7 +480,7 @@ class Kernel(TestProject):
                   extra_args=['allnoconfig', 'all',
                               'CC=%s' % config.toolchain.c_compiler_path,
                               'V=1',
-                              'DEBUG_CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file -ftime-report'])
+                              f'DEBUG_CFLAGS={CFLAGS_TO_INJECT}'])
 
     def verify(self, config, proj_dir):
         self.verify_file_exists(Path(proj_dir, self.name), 'vmlinux')
@@ -501,7 +503,7 @@ class OpenSSL(TestProject):
         logging.info('Configuring %s', self.name)
         subprocess.run(['./Configure',
                         'CC=%s' % toolchain.c_compiler_path,
-                        'CFLAGS=-fanalyzer -fdiagnostics-format=sarif-file -ftime-report'],
+                        f'CFLAGS={CFLAGS_TO_INJECT}'],
                        cwd=Path(proj_dir, self.name),
                        check=True)
         logging.info('Finished configuring %s', self.name)
@@ -570,7 +572,7 @@ class Zlib(TestProject):
         if extra_args:
             args += extra_args
         args += ['CC=%s' % config.toolchain.c_compiler_path,
-                 'CFLAGS=-O -fanalyzer -fdiagnostics-format=sarif-file -ftime-report']
+                 f'CFLAGS=-O {CFLAGS_TO_INJECT}']
         # ...but don't touch SFLAGS, to ensure that the link of the shared
         # library succeeds.
         subprocess.run(args,
