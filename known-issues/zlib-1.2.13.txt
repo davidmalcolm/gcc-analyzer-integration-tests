@@ -1,0 +1,4 @@
+FALSE: adler32.c:92:16: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+
+TRUE: gzread.c:233:16: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+  (assuming that the default case is reachable)

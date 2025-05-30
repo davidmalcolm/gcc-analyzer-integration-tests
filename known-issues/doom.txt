@@ -186,5 +186,7 @@ typedef struct
        But nothing's checking that "read" succeeds; if it fails, "header" could still be uninit.
        See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108689
 
+   FALSE: v_video.c:430:12: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+
   To be classified
   ================

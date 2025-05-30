@@ -66,6 +66,7 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
        So we should be smarter about knowing this; issue with feasibility checking?
        Or an issue with variables getting clobbered?
 
+    FALSE: lib/md5.c:250:10: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
 
 
   Known false positives that aren't to be fixed at the GCC side

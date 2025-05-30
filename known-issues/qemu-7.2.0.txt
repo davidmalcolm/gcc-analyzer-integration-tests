@@ -20,6 +20,9 @@ qemu-7.2.0
   TRUE: ../hw/misc/ivshmem.c:558:9: warning: double ‘close’ of file descriptor ‘fd’ [CWE-1341] [-Wanalyzer-fd-double-close]
     I think this is a true positive, though it might be benign
 
+  TRUE: target/arm/sme_helper.c:1064:27: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    Reported to qemu upstream as https://gitlab.com/qemu-project/qemu/-/issues/1985
+
   False positives already in GCC bugzilla
   =======================================
     GCCBZ: ../qobject/json-parser.c:270:15: warning: infinite recursion [CWE-674] [-Wanalyzer-infinite-recursion]
@@ -122,6 +125,24 @@ In function 'g_autoptr_cleanup_generic_gfree':
     FALSE: net/colo-compare.c:459:12: warning: check of ‘ppkt’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
 
     FALSE: util/qemu-sockets.c:936:8: warning: check of ‘pathbuf’ for NULL after already dereferencing it [-Wanalyzer-deref-before-check]
+
+    FALSE: util/crc-ccitt.c:107:12: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    FALSE: util/crc-ccitt.c:123:12: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    FALSE: util/crc32c.c:110:12: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+
+    FALSE: net/net.c:1792:12: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+      It doesn't know that the default case can't happen, but analyzer probably can't ever figure out that rs->state is only ever one of the case values.
+
+  -Wanalyzer-infinite-loop on a g_error
+  =====================================
+    TRUE: tests/qtest/boot-serial-test.c:273:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: tests/qtest/libqos/e1000e.c:105:5: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: tests/qtest/ivshmem-test.c:500:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: tests/qtest/ivshmem-test.c:371:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: qga/main.c:189:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: qga/main.c:193:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: qga/main.c:198:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+    TRUE: tests/qtest/qmp-test.c:177:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
 
   To be classified
   ================

@@ -118,6 +118,16 @@ VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       but there's a guard on dst being NULL immediately above.
 
+    FALSE: src/fd.c:130:21: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+      Looks like it doesn't understand/think that this can update "next":
+    	if (!_HA_ATOMIC_CAS(&fdtab[fd].update.next, &next, -2))
+		goto redo_next;
+
+    FALSE: src/mux_h2.c:6555:9: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+
+    TRUE: src/peers.c:2935:30: warning: infinite loop [CWE-835] [-Wanalyzer-infinite-loop]
+      (if the implicit default case can occur, which it probably can't in reality)
+
   Former false positives that are believed to be fixed
   ====================================================
 
