@@ -222,7 +222,7 @@ def get_comparable_result(result, base_src_path):
         dumper.dump_sarif_result(result)
         return f.getvalue()
 
-PROFILE_FIELDS = ['user', 'sys', 'wall', 'ggc_mem']
+PROFILE_FIELDS = ['wall', 'ggc_mem']
 
 class InvocationProfile:
     def __init__(self, json_obj, rel_sarif_path):
