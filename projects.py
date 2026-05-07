@@ -364,7 +364,7 @@ class Httpd(TestProject):
 class ImageMagick(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'ImageMagick-7.1.0-57')
-        self.src = Tarball('https://imagemagick.org/archive/ImageMagick-7.1.0-57.tar.xz',
+        self.src = Tarball('https://imagemagick.org/archive/releases/ImageMagick-7.1.0-57.tar.xz',
                            '9c3bc3de37376b90a643b9437435cb477db68596b26a778a584020915196870b')
 
     def verify(self, config, proj_dir):
@@ -556,8 +556,8 @@ class Xz(TestProject):
 class Zlib(TestProject):
     def __init__(self):
         TestProject.__init__(self, 'zlib-1.2.13')
-        self.src = Tarball('https://www.zlib.net/zlib-1.2.13.tar.xz',
-                           'd14c38e313afc35a9a8760dadf26042f51ea0f5d154b0630a31da0540107fb98')
+        self.src = Tarball('https://www.zlib.net/fossils/zlib-1.2.13.tar.gz',
+                           'b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30')
 
     def configure(self, toolchain, proj_dir):
         logging.info('Configuring %s', self.name)
